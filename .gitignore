@@ -14,6 +14,18 @@ build-no-accel/
 build-sanitize-addr/
 build-sanitize-thread/
 
+# Windows CMake files
+*.vcxproj
+*.filters
+*.cmake
+*.sln
+x64/
+Debug/
+Release/
+CMakeFiles/
+CMakeCache.txt
+*.dir/
+
 models/*
 
 /main
