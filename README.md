@@ -1,4 +1,4 @@
-# llama.cpp
+# alpama
 
 [![Actions Status](https://github.com/ggerganov/llama.cpp/workflows/CI/badge.svg)](https://github.com/ggerganov/llama.cpp/actions)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -8,8 +8,8 @@ Inference of [LLaMA](https://arxiv.org/abs/2302.13971) model in pure C/C++
 **Hot topics:**
 
 - [Added Alpaca support](https://github.com/ggerganov/llama.cpp#instruction-mode-with-alpaca)
-- Cache input prompts for faster initialization: https://github.com/ggerganov/llama.cpp/issues/64
-- Create a `llama.cpp` logo: https://github.com/ggerganov/llama.cpp/issues/105
+- Cache input prompts for faster initialization: <https://github.com/ggerganov/llama.cpp/issues/64>
+- Create a `llama.cpp` logo: <https://github.com/ggerganov/llama.cpp/issues/105>
 
 **TEMPORARY NOTICE:**
 If you're updating to the latest master, you will need to regenerate your model files as the format has changed.
@@ -127,7 +127,7 @@ main:    total time = 34036.74 ms
 
 And here is another demo of running both LLaMA-7B and [whisper.cpp](https://github.com/ggerganov/whisper.cpp) on a single M1 Pro MacBook:
 
-https://user-images.githubusercontent.com/1991296/224442907-7693d4be-acaa-4e01-8b4f-add84093ffff.mp4
+<https://user-images.githubusercontent.com/1991296/224442907-7693d4be-acaa-4e01-8b4f-add84093ffff.mp4>
 
 ## Usage
 
@@ -178,10 +178,12 @@ If you want a more ChatGPT-like experience, you can run in interactive mode by p
 In this mode, you can always interrupt generation by pressing Ctrl+C and enter one or more lines of text which will be converted into tokens and appended to the current context. You can also specify a *reverse prompt* with the parameter `-r "reverse prompt string"`. This will result in user input being prompted whenever the exact tokens of the reverse prompt string are encountered in the generation. A typical use is to use a prompt which makes LLaMa emulate a chat between multiple users, say Alice and Bob, and pass `-r "Alice:"`.
 
 Here is an example few-shot interaction, invoked with the command
+
 ```
 ./main -m ./models/13B/ggml-model-q4_0.bin -n 256 --repeat_penalty 1.0 --color -i -r "User:" -f prompts/chat-with-bob.txt
 
 ```
+
 Note the use of `--color` to distinguish between user input and generated text.
 
 ![image](https://user-images.githubusercontent.com/1991296/224575029-2af3c7dc-5a65-4f64-a6bb-517a532aea38.png)
@@ -228,25 +230,30 @@ cadaver, cauliflower, cabbage (vegetable), catalpa (tree) and Cailleach.
 
 You can easily run `llama.cpp` on Android device with [termux](https://play.google.com/store/apps/details?id=com.termux).
 First, obtain the [Android NDK](https://developer.android.com/ndk) and then build with CMake:
+
 ```
-$ mkdir build-android
-$ cd build-android
-$ export NDK=<your_ndk_directory>
-$ cmake -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.4a+dotprod ..
-$ make
+mkdir build-android
+cd build-android
+export NDK=<your_ndk_directory>
+cmake -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.4a+dotprod ..
+make
 ```
+
 Install [termux](https://play.google.com/store/apps/details?id=com.termux) on your device and run `termux-setup-storage` to get access to your SD card.
 Finally, copy the `llama` binary and the model files to your device storage. Here is a demo of an interactive session running on Pixel 5 phone:
 
-https://user-images.githubusercontent.com/271616/225014776-1d567049-ad71-4ef2-b050-55b0b3b9274c.mp4
+<https://user-images.githubusercontent.com/271616/225014776-1d567049-ad71-4ef2-b050-55b0b3b9274c.mp4>
 
 ### Docker
 
 #### Prerequisites
-* Docker must be installed and running on your system.
-* Create a folder to store big models & intermediate files (in ex. im using /llama/models)
+
+- Docker must be installed and running on your system.
+
+- Create a folder to store big models & intermediate files (in ex. im using /llama/models)
 
 #### Images
+
 We have two Docker images available for this project:
 
 1. `ghcr.io/ggerganov/llama.cpp:full`: This image includes both the main executable file and the tools to convert LLaMA models into ggml and convert into 4-bit quantization.
