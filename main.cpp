@@ -832,17 +832,8 @@ bool llama_eval(
     // embd_w.resize(n_vocab*N);
     // memcpy(embd_w.data(), ggml_get_data(inpL), sizeof(float)*n_vocab*N);
 
-    if (return_all_logits)
-    {
-        embd_w.resize(n_vocab * N);
-        memcpy(embd_w.data(), (float *)ggml_get_data(inpL), sizeof(float) * n_vocab * N);
-    }
-    else
-    {
-        // return result for just the last token
-        embd_w.resize(n_vocab);
-        memcpy(embd_w.data(), (float *)ggml_get_data(inpL) + (n_vocab * (N - 1)), sizeof(float) * n_vocab);
-    }
+    embd_w.resize(n_vocab * N);
+    memcpy(embd_w.data(), (float *)ggml_get_data(inpL), sizeof(float) * n_vocab * N);
 
     if (mem_per_token == 0)
     {
@@ -875,26 +866,31 @@ std::vector<double> softmax(const std::vector<float> &logits)
     return probs;
 }
 
-void perplexity(const gpt_vocab &vocab, const llama_model &model, const gpt_params &params, size_t mem_per_token)
+void perplexity(const llama_vocab &vocab, const llama_model &model, const gpt_params &params, size_t mem_per_token)
 {
     // Download: https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-2-raw-v1.zip?ref=salesforce-research
     // Run `./main --perplexity -m models/7B/ggml-model-q4_0.bin -f wiki.test.raw`
     // Output: `perplexity: 13.5106 [114/114]`
-    std::vector<gpt_vocab::id> tokens = ::llama_tokenize(vocab, params.prompt, true);
+    std::vector<llama_vocab::id> tokens = ::llama_tokenize(vocab, params.prompt, true);
 
     int count = 0;
     double nll = 0.0;
     int seq_count = tokens.size() / params.n_ctx;
-    for (int i = 0; i < seq_count; ++i)
-    {
+    printf("Calculating perplexity over %d chunks\n", seq_count);
+    for (int i = 0; i < seq_count; ++i) {
         int start = i * params.n_ctx;
         int end = start + params.n_ctx - 1;
-        std::vector<gpt_vocab::id> embd(tokens.begin() + start, tokens.begin() + end);
+        std::vector<llama_vocab::id> embd(tokens.begin() + start, tokens.begin() + end);
         std::vector<float> logits;
-        if (!llama_eval(model, params.n_threads, 0, embd, logits, mem_per_token, true))
-        {
-            fprintf(stderr, "Failed to predict\n");
-            return;
+        auto start_t = std::chrono::high_resolution_clock::now();
+        // if (!llama_eval(model, params.n_threads, 0, embd, logits, mem_per_token, true)) {
+        //     fprintf(stderr, "Failed to predict\n");
+        //     return;
+        // }
+        auto end_t = std::chrono::high_resolution_clock::now();
+        if (i == 0) {
+            double seconds = std::chrono::duration<double>(end_t - start_t).count();
+            printf("%.2f seconds per pass - ETA %.2f hours\n", seconds, (seconds * seq_count) / (60.0*60.0));
         }
         // We get the logits for all the tokens in the context window (params.n_ctx)
         // from llama_eval above.  Now, based on https://huggingface.co/docs/transformers/perplexity,
@@ -920,7 +916,7 @@ void perplexity(const gpt_vocab &vocab, const llama_model &model, const gpt_para
             ++count;
         }
         // perplexity is e^(average negative log-likelihood)
-        printf("perplexity: %.4lf [%d/%d]    \r", std::exp(nll / count), i + 1, seq_count);
+        printf("[%d]%.4lf,", i + 1, std::exp(nll / count));
         fflush(stdout);
     }
     printf("\n");
@@ -1112,9 +1108,9 @@ int main(int argc, char **argv)
 
     std::vector<llama_vocab::id> embd;
 
-    // determine the required inference memory per token:
-    size_t mem_per_token = 0;
-    llama_eval(model, params.n_threads, 0, { 0, 1, 2, 3 }, logits, mem_per_token);
+    // // determine the required inference memory per token:
+    // size_t mem_per_token = 0;
+    // llama_eval(model, params.n_threads, 0, { 0, 1, 2, 3 }, logits, mem_per_token);
 
     int last_n_size = params.repeat_last_n;
     std::vector<llama_vocab::id> last_n_tokens(last_n_size);
