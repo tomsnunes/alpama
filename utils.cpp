@@ -10,11 +10,11 @@
 #include <string>
 #include <math.h>
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#include <malloc.h> // using malloc.h with MSC/MINGW
-#elif !defined(__FreeBSD__) && !defined(__NetBSD__)
-#include <alloca.h>
-#endif
+ #if defined(_MSC_VER) || defined(__MINGW32__)
+ #include <malloc.h> // using malloc.h with MSC/MINGW
+ #elif !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
+ #include <alloca.h>
+ #endif
 
 bool gpt_params_parse(int argc, char **argv, gpt_params &params)
 {
@@ -119,9 +119,9 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
         else if (arg == "--ignore-eos")
         {
             params.ignore_eos = true;
-        }
-        else if (arg == "-h" || arg == "--help")
-        {
+        } else if (arg == "--n_parts") {
+            params.n_parts = std::stoi(argv[++i]);
+        } else if (arg == "-h" || arg == "--help") {
             gpt_print_usage(argc, argv, params);
             exit(0);
         }
@@ -168,6 +168,7 @@ void gpt_print_usage(int /*argc*/, char **argv, const gpt_params &params)
     fprintf(stderr, "  --ignore-eos          ignore end of stream token and continue generating\n");
     fprintf(stderr, "  --memory_f16          use f16 instead of f32 for memory key+value\n");
     fprintf(stderr, "  --temp N              temperature (default: %.1f)\n", params.temp);
+    fprintf(stderr, "  --n_parts N           number of model parts (default: -1 = determine from dimensions)\n");
     fprintf(stderr, "  -b N, --batch_size N  batch size for prompt processing (default: %d)\n", params.n_batch);
     fprintf(stderr, "  --perplexity          compute perplexity over the prompt\n");
     fprintf(stderr, "  -m FNAME, --model FNAME\n");

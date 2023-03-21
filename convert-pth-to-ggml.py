@@ -27,9 +27,9 @@ from sentencepiece import SentencePieceProcessor
 def parse_args():
 
     parser = argparse.ArgumentParser(description='Convert a LLaMA model checkpoint to a ggml compatible file')
-    parser.add_argument('dir_model', help='directory containing the model checkpoint')
-    parser.add_argument('ftype', type=int, choices=[0, 1], default=1, help='file type (0: float32, 1: float16)')
-    parser.add_argument('vocab_only', type=bool, default=False, help='only write vocab to file')
+    parser.add_argument('dir_model',  help='directory containing the model checkpoint')
+    parser.add_argument('ftype',      help='file type (0: float32, 1: float16)', type=int, choices=[0, 1], default=1)
+    parser.add_argument('vocab_only', help='only write vocab to file', type=int, default=0, nargs='?')
     return parser.parse_args()
 
 def get_n_parts(dim):
@@ -67,7 +67,7 @@ def write_header(fout, hparams, ftype):
 
     keys = ["vocab_size", "dim", "multiple_of", "n_heads", "n_layers"]
     values = [
-        0x67676d66,  # magic: ggml in hex
+        0x67676d66,  # magic: ggmf in hex
         1, # file version
         *[hparams[key] for key in keys],
         hparams["dim"] // hparams["n_heads"],  # rot (obsolete)
@@ -134,6 +134,8 @@ def main():
     ftype_str = ["f32", "f16"]
 
     hparams, tokenizer = load_hparams_and_tokenizer(dir_model)
+
+    print(args)
 
     # if only writing vocab to file
     if args.vocab_only:

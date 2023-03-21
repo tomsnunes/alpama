@@ -20,10 +20,17 @@
 #include <signal.h>
 #endif
 
-#define ANSI_COLOR_RED "\x1b[31m"
-#define ANSI_COLOR_GREEN "\x1b[32m"
-#define ANSI_COLOR_YELLOW "\x1b[33m"
-#define ANSI_COLOR_BLUE "\x1b[34m"
+#if defined (_WIN32)
+#pragma comment(lib,"kernel32.lib")
+extern "C" __declspec(dllimport) void* __stdcall GetStdHandle(unsigned long nStdHandle);
+extern "C" __declspec(dllimport) int __stdcall GetConsoleMode(void* hConsoleHandle, unsigned long* lpMode);
+extern "C" __declspec(dllimport) int __stdcall SetConsoleMode(void* hConsoleHandle, unsigned long dwMode);
+#endif
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN "\x1b[36m"
 #define ANSI_COLOR_RESET "\x1b[0m"
@@ -93,7 +100,8 @@ struct llama_model
 };
 
 // load the model's weights from a file
-bool llama_model_load(const std::string & fname, llama_model & model, llama_vocab & vocab, int n_ctx, ggml_type memory_type = GGML_TYPE_F32) {
+
+bool llama_model_load(const std::string & fname, llama_model & model, llama_vocab & vocab, int n_ctx, int n_parts, ggml_type memory_type = GGML_TYPE_F32) {
     fprintf(stderr, "%s: loading model from '%s' - please wait ...\n", __func__, fname.c_str());
 
     std::vector<char> f_buf(1024 * 1024);
@@ -134,7 +142,6 @@ bool llama_model_load(const std::string & fname, llama_model & model, llama_voca
     }
 
     int n_ff = 0;
-    int n_parts = 0;
 
     // load hparams
     {
@@ -151,8 +158,11 @@ bool llama_model_load(const std::string & fname, llama_model & model, llama_voca
 
         hparams.n_ctx = n_ctx;
 
-        n_ff = ((2 * (4 * hparams.n_embd) / 3 + hparams.n_mult - 1) / hparams.n_mult) * hparams.n_mult;
-        n_parts = LLAMA_N_PARTS.at(hparams.n_embd);
+        n_ff = ((2*(4*hparams.n_embd)/3 + hparams.n_mult - 1)/hparams.n_mult)*hparams.n_mult;
+
+        if (n_parts < 1) {
+            n_parts = LLAMA_N_PARTS.at(hparams.n_embd);
+        }
 
         fprintf(stderr, "%s: n_vocab = %d\n", __func__, hparams.n_vocab);
         fprintf(stderr, "%s: n_ctx   = %d\n", __func__, hparams.n_ctx);
@@ -169,13 +179,20 @@ bool llama_model_load(const std::string & fname, llama_model & model, llama_voca
     // load vocab
     {
         std::string word;
-        for (int i = 0; i < model.hparams.n_vocab; i++)
-        {
+        std::vector<char> tmp(64);
+
+        for (int i = 0; i < model.hparams.n_vocab; i++) {
             uint32_t len;
             fin.read((char *)&len, sizeof(len));
 
             word.resize(len);
-            fin.read((char *)word.data(), len);
+            if (len > 0) {
+                tmp.resize(len);
+                fin.read(tmp.data(), len);
+                word.assign(tmp.data(), len);
+            } else {
+                word.clear();
+            }
 
             float score;
             fin.read((char *)&score, sizeof(score));
@@ -183,10 +200,6 @@ bool llama_model_load(const std::string & fname, llama_model & model, llama_voca
             vocab.token_to_id[word] = i;
             vocab.id_to_token[i] = word;
             vocab.score[i] = score;
-
-            // if (i < 30000) {
-            //     fprintf(stderr, "%s: vocab[%d] = '%s'\n", __func__, i, word.c_str());
-            // }
         }
     }
 
@@ -1006,8 +1019,7 @@ int main(int argc, char **argv)
     {
         const ggml_type memory_type = params.memory_f16 ? GGML_TYPE_F16 : GGML_TYPE_F32;
         const int64_t t_start_us = ggml_time_us();
-        if (!llama_model_load(params.model, model, vocab, params.n_ctx, memory_type))
-        {
+        if (!llama_model_load(params.model, model, vocab, params.n_ctx, params.n_parts, memory_type)) {
             fprintf(stderr, "%s: failed to load model from '%s'\n", __func__, params.model.c_str());
             return 1;
         }
@@ -1057,16 +1069,8 @@ int main(int argc, char **argv)
         params.antiprompt.push_back("### Instruction:\n\n");
     }
 
-    // tokenize the reverse prompt
-    std::vector<std::vector<llama_vocab::id>> antipromptv_inp;
-
-    for (auto antiprompt : params.antiprompt) {
-        antipromptv_inp.push_back(::llama_tokenize(vocab, antiprompt, false));
-    }
-
     // enable interactive mode if reverse prompt is specified
-    if (params.antiprompt.size() != 0)
-    {
+    if (params.antiprompt.size() != 0) {
         params.interactive = true;
     }
 
@@ -1092,10 +1096,8 @@ int main(int argc, char **argv)
 
         fprintf(stderr, "%s: interactive mode on.\n", __func__);
 
-        if (params.antiprompt.size())
-        {
-            for (auto antiprompt : params.antiprompt)
-            {
+        if(params.antiprompt.size()) {
+            for (auto antiprompt : params.antiprompt) {
                 fprintf(stderr, "Reverse prompt: '%s'\n", antiprompt.c_str());
             }
         }
@@ -1130,8 +1132,15 @@ int main(int argc, char **argv)
     int remaining_tokens = params.n_predict;
 
     // set the color for the prompt which will be output initially
-    if (params.use_color)
-    {
+    if (params.use_color) {
+#if defined (_WIN32)
+        // Enable ANSI colors on Windows 10+
+        unsigned long dwMode = 0;
+        void* hConOut = GetStdHandle((unsigned long)-11); // STD_OUTPUT_HANDLE (-11)
+        if (hConOut && hConOut != (void*)-1 && GetConsoleMode(hConOut, &dwMode) && !(dwMode & 0x4)) {
+            SetConsoleMode(hConOut, dwMode | 0x4); // ENABLE_VIRTUAL_TERMINAL_PROCESSING (0x4)
+        }
+#endif
         printf(ANSI_COLOR_YELLOW);
     }
 
@@ -1154,8 +1163,7 @@ int main(int argc, char **argv)
         n_past += embd.size();
         embd.clear();
 
-        if (embd_inp.size() <= input_consumed)
-        {
+        if ((int) embd_inp.size() <= input_consumed) {
             // out of user input, sample next token
             const float top_k = params.top_k;
             const float top_p = params.top_p;
@@ -1195,8 +1203,7 @@ int main(int argc, char **argv)
         else
         {
             // some user input remains from prompt or interaction, forward it to processing
-            while (embd_inp.size() > input_consumed)
-            {
+            while ((int) embd_inp.size() > input_consumed) {
                 embd.push_back(embd_inp[input_consumed]);
                 last_n_tokens.erase(last_n_tokens.begin());
                 last_n_tokens.push_back(embd_inp[input_consumed]);
@@ -1225,20 +1232,16 @@ int main(int argc, char **argv)
 
         // in interactive mode, and not currently processing queued inputs;
         // check if we should prompt the user for more
-        if (params.interactive && embd_inp.size() <= input_consumed)
-        {
+        if (params.interactive && (int) embd_inp.size() <= input_consumed) {
             // check for reverse prompt
             std::string last_output;
-            for (auto id : last_n_tokens)
-            {
+            for (auto id : last_n_tokens) {
                 last_output += vocab.id_to_token[id];
             }
 
             // Check if each of the reverse prompts appears at the end of the output.
-            for (std::string antiprompt : params.antiprompt)
-            {
-                if (last_output.find(antiprompt.c_str(), last_output.length() - antiprompt.length(), antiprompt.length()) != std::string::npos)
-                {
+            for (std::string antiprompt : params.antiprompt) {
+                if (last_output.find(antiprompt.c_str(), last_output.length() - antiprompt.length(), antiprompt.length()) != std::string::npos) {
                     is_interacting = true;
                     break;
                 }
