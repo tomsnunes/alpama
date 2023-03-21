@@ -2,9 +2,9 @@
 
 #include <cstdio>
 #include <string>
-#include <map>
+#include <unordered_map>
 
-static const std::map<std::string, std::vector<llama_vocab::id>> k_tests = {
+static const std::unordered_map<std::string, std::vector<llama_vocab::id>> k_tests = {
     { "Hello World",        { 1,  10994,   2787, }, },
     { " Hello World",       { 1,  15043,   2787, }, },
     { " Hello World!",      { 1,  15043,   2787,  29991, }, },
