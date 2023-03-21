@@ -883,10 +883,7 @@ void perplexity(const llama_vocab &vocab, const llama_model &model, const gpt_pa
         std::vector<llama_vocab::id> embd(tokens.begin() + start, tokens.begin() + end);
         std::vector<float> logits;
         auto start_t = std::chrono::high_resolution_clock::now();
-        // if (!llama_eval(model, params.n_threads, 0, embd, logits, mem_per_token, true)) {
-        //     fprintf(stderr, "Failed to predict\n");
-        //     return;
-        // }
+
         auto end_t = std::chrono::high_resolution_clock::now();
         if (i == 0) {
             double seconds = std::chrono::duration<double>(end_t - start_t).count();
