@@ -111,13 +111,9 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
         else if (arg == "-r" || arg == "--reverse-prompt")
         {
             params.antiprompt.push_back(argv[++i]);
-        }
-        else if (arg == "--perplexity")
-        {
+        } else if (arg == "--perplexity") {
             params.perplexity = true;
-        }
-        else if (arg == "--ignore-eos")
-        {
+        } else if (arg == "--ignore-eos") {
             params.ignore_eos = true;
         } else if (arg == "--n_parts") {
             params.n_parts = std::stoi(argv[++i]);
@@ -722,11 +718,10 @@ size_t ggml_quantize_q4_1(float *src, void *dst, int n, int k, int qk, int64_t *
 
     char *pdst = (char *)dst;
 
-    for (int j = 0; j < n; j += k)
-    {
-        uint8_t *pd = (uint8_t *)(pdst + (j / k) * row_size + 0 * bs);
-        uint8_t *pm = (uint8_t *)(pdst + (j / k) * row_size + 0 * bs + sizeof(float));
-        uint8_t *pb = (uint8_t *)(pdst + (j / k) * row_size + 0 * bs + 2 * sizeof(float));
+    for (int j = 0; j < n; j += k) {
+        uint8_t * pd = (uint8_t *) (pdst + (j/k)*row_size + 0*bs);
+        uint8_t * pm = (uint8_t *) (pdst + (j/k)*row_size + 0*bs +   sizeof(float));
+        uint8_t * pb = (uint8_t *) (pdst + (j/k)*row_size + 0*bs + 2*sizeof(float));
 
         // printf("n = %d, k = %d, nb = %d, row_size = %d, j = %d, pm = %p, pd = %p, pb = %p\n", n, k, nb, row_size, j, pm, pd, pb);
 
@@ -748,8 +743,8 @@ size_t ggml_quantize_q4_1(float *src, void *dst, int n, int k, int qk, int64_t *
                 const float d = (max - min) / ((1 << 4) - 1);
                 const float id = d ? 1.0f / d : 0.0f;
 
-                *(float *)pd = d;
-                *(float *)pm = min;
+                *(float *) pd = d;
+                *(float *) pm = min;
                 pd += bs;
                 pm += bs;
 
