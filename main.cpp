@@ -888,16 +888,21 @@ void perplexity(const gpt_vocab &vocab, const llama_model &model, const gpt_para
     int count = 0;
     double nll = 0.0;
     int seq_count = tokens.size() / params.n_ctx;
-    for (int i = 0; i < seq_count; ++i)
-    {
+    printf("Calculating perplexity over %d chunks\n", seq_count);
+    for (int i = 0; i < seq_count; ++i) {
         int start = i * params.n_ctx;
         int end = start + params.n_ctx - 1;
         std::vector<gpt_vocab::id> embd(tokens.begin() + start, tokens.begin() + end);
         std::vector<float> logits;
-        if (!llama_eval(model, params.n_threads, 0, embd, logits, mem_per_token, true))
-        {
+        auto start_t = std::chrono::high_resolution_clock::now();
+        if (!llama_eval(model, params.n_threads, 0, embd, logits, mem_per_token, true)) {
             fprintf(stderr, "Failed to predict\n");
             return;
+        }
+        auto end_t = std::chrono::high_resolution_clock::now();
+        if (i == 0) {
+            double seconds = std::chrono::duration<double>(end_t - start_t).count();
+            printf("%.2f seconds per pass - ETA %.2f hours\n", seconds, (seconds * seq_count) / (60.0*60.0));
         }
         // We get the logits for all the tokens in the context window (params.n_ctx)
         // from llama_eval above.  Now, based on https://huggingface.co/docs/transformers/perplexity,
@@ -923,7 +928,7 @@ void perplexity(const gpt_vocab &vocab, const llama_model &model, const gpt_para
             ++count;
         }
         // perplexity is e^(average negative log-likelihood)
-        printf("perplexity: %.4lf [%d/%d]    \r", std::exp(nll / count), i + 1, seq_count);
+        printf("[%d]%.4lf,", i + 1, std::exp(nll / count));
         fflush(stdout);
     }
     printf("\n");
