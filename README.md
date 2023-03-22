@@ -7,7 +7,7 @@ Inference of [LLaMA](https://arxiv.org/abs/2302.13971) model in pure C/C++
 
 **Hot topics:**
 
-- New C-style API is now available: https://github.com/ggerganov/llama.cpp/pull/370
+- New C-style API is now available: <https://github.com/ggerganov/llama.cpp/pull/370/>.
 - [Added Alpaca support](https://github.com/ggerganov/llama.cpp#instruction-mode-with-alpaca)
 - Cache input prompts for faster initialization: <https://github.com/ggerganov/llama.cpp/issues/64>
 - Create a `llama.cpp` logo: <https://github.com/ggerganov/llama.cpp/issues/105>
@@ -193,7 +193,7 @@ Note the use of `--color` to distinguish between user input and generated text.
 
 First, download the `ggml` Alpaca model into the `./models` folder:
 
-```
+```bash
 # use one of these
 # TODO: add a script to simplify the download
 curl -o ./models/ggml-alpaca-7b-q4.bin -C - https://gateway.estuary.tech/gw/ipfs/QmUp1UGeQFDqJKvtjbSYPBiZZKRjLp8shVP9hT8ZB9Ynv1
@@ -203,13 +203,13 @@ curl -o ./models/ggml-alpaca-7b-q4.bin -C - https://cloudflare-ipfs.com/ipfs/QmU
 
 Now run the `main` tool like this:
 
-```
+```bash
 ./main -m ./models/ggml-alpaca-7b-q4.bin --color -f ./prompts/alpaca.txt -ins
 ```
 
 Sample run:
 
-```
+```bash
 == Running in interactive mode. ==
  - Press Ctrl+C to interject at any time.
  - Press Return to return control to LLaMa.
@@ -228,9 +228,9 @@ cadaver, cauliflower, cabbage (vegetable), catalpa (tree) and Cailleach.
 
 ### Obtaining and verifying the Facebook LLaMA original model and Stanford Alpaca model data
 
-* The LLaMA models are officially distributed by Facebook and will never be provided through this repository. See this [Pull Request in Facebook's LLaMA repository](https://github.com/facebookresearch/llama/pull/73/files) if you need to obtain access to the model data.
+- The LLaMA models are officially distributed by Facebook and will never be provided through this repository. See this [Pull Request in Facebook's LLaMA repository](https://github.com/facebookresearch/llama/pull/73/files) if you need to obtain access to the model data.
 
-* Please verify the sha256 checksums of all of your `consolidated*.pth` and corresponding converted `ggml-model-*.bin` model files to confirm that you have the correct model data files before creating an issue relating to your model files.
+- Please verify the sha256 checksums of all of your `consolidated*.pth` and corresponding converted `ggml-model-*.bin` model files to confirm that you have the correct model data files before creating an issue relating to your model files.
 
 The following command will verify if you have all possible latest files in your self-installed `./models` subdirectory:
 
@@ -245,7 +245,7 @@ or
 You can easily run `llama.cpp` on Android device with [termux](https://play.google.com/store/apps/details?id=com.termux).
 First, obtain the [Android NDK](https://developer.android.com/ndk) and then build with CMake:
 
-```
+```bash
 mkdir build-android
 cd build-android
 export NDK=<your_ndk_directory>
@@ -273,7 +273,7 @@ We have two Docker images available for this project:
 1. `ghcr.io/ggerganov/llama.cpp:full`: This image includes both the main executable file and the tools to convert LLaMA models into ggml and convert into 4-bit quantization.
 2. `ghcr.io/ggerganov/llama.cpp:light`: This image only includes the main executable file.
 
-#### Usage
+#### Docker Usage
 
 The easiest way to download the models, convert them to ggml and optimize them is with the --all-in-one command which includes the full docker image.
 
