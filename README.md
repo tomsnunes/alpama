@@ -5,17 +5,9 @@
 
 Inference of [LLaMA](https://arxiv.org/abs/2302.13971) model in pure C/C++
 
----
-
-**TEMPORARY NOTICE:**
-Big code change incoming: https://github.com/ggerganov/llama.cpp/pull/370
-
-Do not merge stuff until we merge this. Probably merge will happen on March 22 ~6:00am UTC
-
----
-
 **Hot topics:**
 
+- New C-style API is now available: https://github.com/ggerganov/llama.cpp/pull/370
 - [Added Alpaca support](https://github.com/ggerganov/llama.cpp#instruction-mode-with-alpaca)
 - Cache input prompts for faster initialization: <https://github.com/ggerganov/llama.cpp/issues/64>
 - Create a `llama.cpp` logo: <https://github.com/ggerganov/llama.cpp/issues/105>
@@ -234,14 +226,19 @@ cadaver, cauliflower, cabbage (vegetable), catalpa (tree) and Cailleach.
 > 
 ```
 
-### Downloading and verifying the Facebook LLaMA original model and Stanford Alpaca model data
+### Obtaining and verifying the Facebook LLaMA original model and Stanford Alpaca model data
 
-* The LLaMA models are officially distributed by Facebook and will never be provided through this repository. See this [pull request in Facebook's LLaMA repository](https://github.com/facebookresearch/llama/pull/73/files) if you need to obtain access to the model data.
-* Please verify the `sha256sum` of each of your `consolidated*.pth` and `ggml-model-XXX.bin` files to confirm that you have the correct model data files before logging an issue relating to your model files. You can find sha256 chksums in the for all the supported models in the subdirectory: `models.sha256`. If you have downloaded and converted all the models you may be able to automatically verify your data files by running:
-```
-cd ./models.sha256
-./chk_sha256sums.sh
-```
+* The LLaMA models are officially distributed by Facebook and will never be provided through this repository. See this [Pull Request in Facebook's LLaMA repository](https://github.com/facebookresearch/llama/pull/73/files) if you need to obtain access to the model data.
+
+* Please verify the sha256 checksums of all of your `consolidated*.pth` and corresponding converted `ggml-model-*.bin` model files to confirm that you have the correct model data files before creating an issue relating to your model files.
+
+The following command will verify if you have all possible latest files in your self-installed `./models` subdirectory:
+
+`sha256sum --ignore-missing -c SHA256SUMS` on Linux
+
+or
+
+`shasum -a 256 --ignore-missing -c SHA256SUMS` on macOS
 
 ### Android
 
