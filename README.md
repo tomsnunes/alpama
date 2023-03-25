@@ -219,7 +219,9 @@ cadaver, cauliflower, cabbage (vegetable), catalpa (tree) and Cailleach.
 
 ### Obtaining and verifying the Facebook LLaMA original model and Stanford Alpaca model data
 
-- The LLaMA models are officially distributed by Facebook and will never be provided through this repository. See this [pull request in Facebook's LLaMA repository](https://github.com/facebookresearch/llama/pull/73/files) if you need to obtain access to the model data.
+- **Under no circumstances share IPFS, magnet links, or any other links to model downloads anywhere in this respository, including in issues, discussions or pull requests. They will be immediately deleted.**
+- The LLaMA models are officially distributed by Facebook and will **never** be provided through this repository. 
+- Refer to [Facebook's LLaMA repository](https://github.com/facebookresearch/llama/pull/73/files) if you need to request access to the model data.
 - Please verify the sha256 checksums of all downloaded model files to confirm that you have the correct model data files before creating an issue relating to your model files.
 - The following command will verify if you have all possible latest files in your self-installed `./models` subdirectory:
 
@@ -238,7 +240,7 @@ cadaver, cauliflower, cabbage (vegetable), catalpa (tree) and Cailleach.
   - GPT-3.5 / InstructGPT / ChatGPT:
     - [Aligning language models to follow instructions](https://openai.com/research/instruction-following)
     - [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155)
-
+    
 ### Perplexity (Measuring model quality)
 
 You can pass `--perplexity` as a command line option to measure perplexity over the given prompt.  For more background,

@@ -207,6 +207,8 @@ int main(int argc, char ** argv) {
         lparams.seed       = params.seed;
         lparams.f16_kv     = params.memory_f16;
         lparams.logits_all = params.perplexity;
+        lparams.use_mlock  = params.use_mlock;
+        lparams.embedding  = params.embedding;
 
         ctx = llama_init_from_file(params.model.c_str(), lparams);
 
@@ -223,11 +225,23 @@ int main(int argc, char ** argv) {
                 params.n_threads, std::thread::hardware_concurrency(), llama_print_system_info());
     }
 
-    // determine the required inference memory per token:
-    // TODO: better way to do that
-    {
-        const std::vector<llama_token> tmp = { 0, 1, 2, 3 };
-        llama_eval(ctx, tmp.data(), tmp.size(), 0, params.n_threads);
+    // determine the maximum memory usage needed to do inference for the given n_batch and n_predict parameters
+    // uncomment the "used_mem" line in llama.cpp to see the results
+    if (params.mem_test) {
+        {
+            const std::vector<llama_token> tmp(params.n_batch, 0);
+            llama_eval(ctx, tmp.data(), tmp.size(), 0, params.n_threads);
+        }
+
+        {
+            const std::vector<llama_token> tmp = { 0, };
+            llama_eval(ctx, tmp.data(), tmp.size(), params.n_predict - 1, params.n_threads);
+        }
+
+        llama_print_timings(ctx);
+        llama_free(ctx);
+
+        return 0;
     }
 
     if (params.perplexity) {
@@ -296,11 +310,16 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "Reverse prompt: '%s'\n", antiprompt.c_str());
             }
         }
+
+        if (!params.input_prefix.empty()) {
+            fprintf(stderr, "Input prefix: '%s'\n", params.input_prefix.c_str());
+        }
     }
     fprintf(stderr, "sampling parameters: temp = %f, top_k = %d, top_p = %f, repeat_last_n = %i, repeat_penalty = %f\n", params.temp, params.top_k, params.top_p, params.repeat_last_n, params.repeat_penalty);
     fprintf(stderr, "\n\n");
 
     std::vector<llama_token> embd;
+
 
     int last_n_size = params.repeat_last_n;
     std::vector<llama_token> last_n_tokens(last_n_size);
@@ -335,8 +354,71 @@ int main(int argc, char ** argv) {
     // the first thing we will do is to output the prompt, so set color accordingly
     set_console_state(CONSOLE_STATE_PROMPT);
 
+    if (params.embedding){
+        embd = embd_inp;
+
+        if (embd.size() > 0) {
+            if (llama_eval(ctx, embd.data(), embd.size(), n_past, params.n_threads)) {
+                fprintf(stderr, "%s : failed to eval\n", __func__);
+                return 1;
+            }
+        }
+
+        const auto embeddings = llama_get_embeddings(ctx);
+
+        // TODO: print / use the embeddings
+
+        if (params.use_color) {
+            printf(ANSI_COLOR_RESET);
+        }
+
+        return 0;
+    }
+
+    if (params.embedding){
+        embd = embd_inp;
+
+        if (embd.size() > 0) {
+            if (llama_eval(ctx, embd.data(), embd.size(), n_past, params.n_threads)) {
+                fprintf(stderr, "%s : failed to eval\n", __func__);
+                return 1;
+            }
+        }
+
+        const auto embeddings = llama_get_embeddings(ctx);
+
+        // TODO: print / use the embeddings
+
+        if (params.use_color) {
+            printf(ANSI_COLOR_RESET);
+        }
+
+        return 0;
+    }
+
+    if (params.embedding){
+        embd = embd_inp;
+
+        if (embd.size() > 0) {
+            if (llama_eval(ctx, embd.data(), embd.size(), n_past, params.n_threads)) {
+                fprintf(stderr, "%s : failed to eval\n", __func__);
+                return 1;
+            }
+        }
+
+        const auto embeddings = llama_get_embeddings(ctx);
+
+        // TODO: print / use the embeddings
+
+        if (params.use_color) {
+            printf(ANSI_COLOR_RESET);
+        }
+
+        return 0;
+    }
+
     while (remaining_tokens > 0 || params.interactive)
-    {
+{
         // predict
         if (embd.size() > 0) {
             if (llama_eval(ctx, embd.data(), embd.size(), n_past, params.n_threads)) {
@@ -348,7 +430,7 @@ int main(int argc, char ** argv) {
         n_past += embd.size();
         embd.clear();
 
-        if ((int) embd_inp.size() <= input_consumed) {
+        if ((int) embd_inp.size() <= input_consumed && !is_interacting) {
             // out of user input, sample next token
             const float top_k          = params.top_k;
             const float top_p          = params.top_p;
@@ -376,7 +458,7 @@ int main(int argc, char ** argv) {
             }
 
             // replace end of text token with newline token when in interactive mode
-            if (id == llama_token_eos() && params.interactive) {
+            if (id == llama_token_eos() && params.interactive && !params.instruct) {
                 id = llama_token_newline.front();
                 if (params.antiprompt.size() != 0) {
                     // tokenize and inject first reverse prompt
@@ -431,13 +513,16 @@ int main(int argc, char ** argv) {
             }
 
             // Check if each of the reverse prompts appears at the end of the output.
-            for (std::string antiprompt : params.antiprompt) {
+            for (std::string & antiprompt : params.antiprompt) {
                 if (last_output.find(antiprompt.c_str(), last_output.length() - antiprompt.length(), antiprompt.length()) != std::string::npos) {
                     is_interacting = true;
+                    set_console_state(CONSOLE_STATE_USER_INPUT);
+                    fflush(stdout);
                     break;
                 }
             }
-            if (is_interacting) {
+
+            if (n_past > 0 && is_interacting) {
                 // potentially set color to indicate we are taking user input
                 set_console_state(CONSOLE_STATE_USER_INPUT);
 
@@ -449,6 +534,11 @@ int main(int argc, char ** argv) {
                 }
 
                 std::string buffer;
+                if (!params.input_prefix.empty()) {
+                    buffer += params.input_prefix;
+                    printf(buffer.c_str());
+                }
+
                 std::string line;
                 bool another_line = true;
                 do
@@ -480,13 +570,20 @@ int main(int argc, char ** argv) {
 
                 input_noecho = true; // do not echo this again
             }
-            is_interacting = false;
+
+            if (n_past > 0) {
+                is_interacting = false;
+            }
         }
 
         // end of text token
         if (embd.back() == llama_token_eos()) {
-            fprintf(stderr, " [end of text]\n");
-            break;
+            if (params.instruct) {
+                is_interacting = true;
+            } else {
+                fprintf(stderr, " [end of text]\n");
+                break;
+            }
         }
 
         // In interactive mode, respect the maximum number of tokens and drop back to user input when reached.
@@ -502,7 +599,6 @@ int main(int argc, char ** argv) {
 #endif
 
     llama_print_timings(ctx);
-
     llama_free(ctx);
 
     set_console_state(CONSOLE_STATE_DEFAULT);

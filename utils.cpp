@@ -1,3 +1,5 @@
+#include "ggml.h"
+
 #include "utils.h"
 
 #include <cassert>
@@ -80,8 +82,8 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
                 break;
             }
             params.n_ctx = std::stoi(argv[i]);
-        } else if (arg == "--memory_f16") {
-            params.memory_f16 = true;
+        } else if (arg == "--memory_f32") {
+            params.memory_f16 = false;
         } else if (arg == "--top_p") {
             if (++i >= argc) {
                 invalid_param = true;
@@ -112,6 +114,7 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
                 break;
             }
             params.n_batch = std::stoi(argv[i]);
+            params.n_batch = std::min(512, params.n_batch);
         } else if (arg == "-m" || arg == "--model") {
             if (++i >= argc) {
                 invalid_param = true;
@@ -119,6 +122,10 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
             }
             params.model = argv[i];
         } else if (arg == "-i" || arg == "--interactive") {
+            params.interactive = true;
+        } else if (arg == "--embedding") {
+            params.embedding = true;
+        } else if (arg == "--interactive-start") {
             params.interactive = true;
         } else if (arg == "--interactive-first") {
             params.interactive_start = true;
@@ -128,6 +135,10 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
         else if (arg == "--color")
         {
             params.use_color = true;
+        } else if (arg == "--mlock") {
+            params.use_mlock = true;
+        } else if (arg == "--mtest") {
+            params.mem_test = true;
         } else if (arg == "-r" || arg == "--reverse-prompt") {
             if (++i >= argc) {
                 invalid_param = true;
@@ -151,9 +162,13 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
         else if (arg == "--random-prompt")
         {
             params.random_prompt = true;
-        }
-        else
-        {
+        } else if (arg == "--in-prefix") {
+            if (++i >= argc) {
+                invalid_param = true;
+                break;
+            }
+            params.input_prefix = argv[i];
+        } else {
             fprintf(stderr, "error: unknown argument: %s\n", arg.c_str());
             gpt_print_usage(argc, argv, params);
             exit(1);
@@ -186,6 +201,7 @@ void gpt_print_usage(int /*argc*/, char **argv, const gpt_params &params)
     fprintf(stderr, "  -p PROMPT, --prompt PROMPT\n");
     fprintf(stderr, "                        prompt to start generation with (default: empty)\n");
     fprintf(stderr, "  --random-prompt       start with a randomized prompt.\n");
+    fprintf(stderr, "  --in-prefix STRING    string to prefix user inputs with (default: empty)\n");
     fprintf(stderr, "  -f FNAME, --file FNAME\n");
     fprintf(stderr, "                        prompt file to start generation.\n");
     fprintf(stderr, "  -n N, --n_predict N   number of tokens to predict (default: %d)\n", params.n_predict);
@@ -195,11 +211,15 @@ void gpt_print_usage(int /*argc*/, char **argv, const gpt_params &params)
     fprintf(stderr, "  --repeat_penalty N    penalize repeat sequence of tokens (default: %.1f)\n", params.repeat_penalty);
     fprintf(stderr, "  -c N, --ctx_size N    size of the prompt context (default: %d)\n", params.n_ctx);
     fprintf(stderr, "  --ignore-eos          ignore end of stream token and continue generating\n");
-    fprintf(stderr, "  --memory_f16          use f16 instead of f32 for memory key+value\n");
+    fprintf(stderr, "  --memory_f32          use f32 instead of f16 for memory key+value\n");
     fprintf(stderr, "  --temp N              temperature (default: %.1f)\n", params.temp);
     fprintf(stderr, "  --n_parts N           number of model parts (default: -1 = determine from dimensions)\n");
     fprintf(stderr, "  -b N, --batch_size N  batch size for prompt processing (default: %d)\n", params.n_batch);
     fprintf(stderr, "  --perplexity          compute perplexity over the prompt\n");
+    if (ggml_mlock_supported()) {
+        fprintf(stderr, "  --mlock               force system to keep model in RAM rather than swapping or compressing\n");
+    }
+    fprintf(stderr, "  --mtest               compute maximum memory usage\n");
     fprintf(stderr, "  -m FNAME, --model FNAME\n");
     fprintf(stderr, "                        model path (default: %s)\n", params.model.c_str());
     fprintf(stderr, "\n");
