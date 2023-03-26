@@ -197,13 +197,12 @@ Note the use of `--color` to distinguish between user input and generated text.
 1. First, download the `ggml` Alpaca model into the `./models` folder
 2. Run the `main` tool like this:
 
-<<<<<<< HEAD
 ```bash
 ./main -m ./models/ggml-alpaca-7b-q4.bin --color -f ./prompts/alpaca.txt -ins
-=======
 ```
+
 ./examples/alpaca.sh
->>>>>>> 19726169b379bebc96189673a19b89ab1d307659
+
 ```
 
 Sample run:
@@ -338,6 +337,8 @@ or with light image:
 ```bash
 docker run -v /llama/models:/models ghcr.io/ggerganov/llama.cpp:light -m /models/7B/ggml-model-q4_0.bin -p "Building a website can be done in 10 simple steps:" -n 512
 ```
+
+00000000000000000000000000000000-++++++++++++++++.............................................................................................................................................+-
 
 ### Contributing
 
