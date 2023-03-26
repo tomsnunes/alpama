@@ -54,6 +54,7 @@ option(LLAMA_SANITIZE_UNDEFINED     "llama: enable undefined sanitizer"         
 # instruction set specific
 option(LLAMA_AVX                    "llama: enable AVX"                                     ON)
 option(LLAMA_AVX2                   "llama: enable AVX2"                                    ON)
+option(LLAMA_AVX512                 "llama: enable AVX512"                                  OFF)
 option(LLAMA_FMA                    "llama: enable FMA"                                     ON)
 
 # 3rd party libs
@@ -75,14 +76,17 @@ find_package(Threads REQUIRED)
 if (NOT MSVC)
     if (LLAMA_SANITIZE_THREAD)
         add_compile_options(-fsanitize=thread)
+        link_libraries(-fsanitize=thread)
     endif()
 
     if (LLAMA_SANITIZE_ADDRESS)
         add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+        link_libraries(-fsanitize=address)
     endif()
 
     if (LLAMA_SANITIZE_UNDEFINED)
         add_compile_options(-fsanitize=undefined)
+        link_libraries(-fsanitize=undefined)
     endif()
 endif()
 
@@ -185,7 +189,9 @@ if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES
 elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(x86_64|i686|AMD64)$")
     message(STATUS "x86 detected")
     if (MSVC)
-        if (LLAMA_AVX2)
+        if (LLAMA_AVX512)
+            add_compile_options(/arch:AVX512)
+        elseif (LLAMA_AVX2)
             add_compile_options(/arch:AVX2)
         elseif (LLAMA_AVX)
             add_compile_options(/arch:AVX)
@@ -201,6 +207,12 @@ elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(x86_64|i686|AMD64)$")
         if (LLAMA_AVX2)
             add_compile_options(-mavx2)
         endif()
+        if (LLAMA_AVX512)
+            add_compile_options(-mavx512f)
+            # add_compile_options(-mavx512cd)
+            # add_compile_options(-mavx512dq)
+            # add_compile_options(-mavx512bw)
+        endif()
     endif()
 else()
     # TODO: support PowerPC
@@ -210,17 +222,6 @@ endif()
 #
 # Build libraries
 #
-
-add_library(utils OBJECT
-            utils.cpp
-            utils.h)
-
-target_include_directories(utils PUBLIC .)
-target_compile_features(utils PUBLIC cxx_std_11) # don't bump
-target_link_libraries(utils PRIVATE ${LLAMA_EXTRA_LIBS})
-if (BUILD_SHARED_LIBS)
-    set_target_properties(utils PROPERTIES POSITION_INDEPENDENT_CODE ON)
-endif()
 
 add_library(ggml OBJECT
             ggml.c
@@ -239,21 +240,11 @@ add_library(llama
 
 target_include_directories(llama PUBLIC .)
 target_compile_features(llama PUBLIC cxx_std_11) # don't bump
-target_link_libraries(llama PRIVATE utils ggml ${LLAMA_EXTRA_LIBS})
+target_link_libraries(llama PRIVATE ggml ${LLAMA_EXTRA_LIBS})
 if (BUILD_SHARED_LIBS)
     set_target_properties(llama PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_compile_definitions(llama PRIVATE LLAMA_SHARED LLAMA_BUILD)
 endif()
-
-#
-# Executables
-#
-
-add_executable(main main.cpp)
-target_link_libraries(main PRIVATE llama ggml utils)
-
-add_executable(quantize quantize.cpp)
-target_link_libraries(quantize PRIVATE llama ggml utils)
 
 #
 # programs, examples and tests
@@ -264,6 +255,6 @@ if (LLAMA_BUILD_TESTS AND NOT CMAKE_JS_VERSION)
     add_subdirectory(tests)
 endif ()
 
-#if (LLAMA_BUILD_EXAMPLES)
-#    add_subdirectory(examples)
-#endif()
+if (LLAMA_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
