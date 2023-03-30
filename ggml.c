@@ -1038,8 +1038,8 @@ static void dequantize_row_q4_1(const void * restrict vx, float * restrict y, in
             const uint8x16_t vq = vcombine_u8(vx_0, vx_1);
 
             // convert to 2x uint16x8_t
-            const uint16x8_t vi_0 = vmovl_s8(vget_low_u8 (vq));
-            const uint16x8_t vi_1 = vmovl_s8(vget_high_u8(vq));
+            const uint16x8_t vi_0 = vmovl_u8(vget_low_u8 (vq));
+            const uint16x8_t vi_1 = vmovl_u8(vget_high_u8(vq));
 
             // convert to 4x float32x4_t
             const float32x4_t vf_0 = vcvtq_f32_u32(vmovl_u16(vget_low_u16 (vi_0)));
@@ -1829,7 +1829,6 @@ static void ggml_vec_dot_q4_0(const int n, float * restrict s, const void * rest
 
     const int superblock_size = 8;
     const int superblock_count = nb / superblock_size;
-    const int remainder = nb % superblock_size;
 
     for (int superblock_ix = 0; superblock_ix < superblock_count; superblock_ix += 1) {
         int i = superblock_ix * superblock_size;
