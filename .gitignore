@@ -34,6 +34,7 @@ models/*
 /result
 /perplexity
 /embedding
+/Pipfile
 
 arm_neon.h
 compile_commands.json
