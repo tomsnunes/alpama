@@ -2,11 +2,34 @@
 
 """Script to execute the "quantize" script on a given set of models."""
 
-import subprocess
 import argparse
+import contextlib
 import glob
-import sys
+import multiprocessing
 import os
+import subprocess
+import sys
+
+
+@contextlib.contextmanager
+def create_executor(threads=1):
+    if threads > 1:
+        pool = multiprocessing.Pool(threads)
+
+        def executor(func, *args):
+            pool.apply_async(func, args)
+
+    else:
+
+        def executor(func, *args):
+            return func(*args)
+
+    try:
+        yield executor
+    finally:
+        if threads > 1:
+            pool.close()
+            pool.join()
 
 
 def main():
@@ -47,14 +70,14 @@ def main():
         default=os.path.join(os.getcwd(), quantize_script_binary),
         help='Specify the path to the "quantize" script.'
     )
-
-    # TODO: Revise this code
-    # parser.add_argument(
-    #     '-t', '--threads', dest='threads', type='int',
-    #     default=os.cpu_count(),
-    #     help='Specify the number of threads to use to quantize many models at '
-    #     'once. Defaults to os.cpu_count().'
-    # )
+    parser.add_argument(
+        '-t',
+        '--threads',
+        dest='threads',
+        type=int,
+        help='Specify the number of parallel quantization tasks [default=%(default)s]',
+        default=min(4, os.cpu_count()),
+    )
 
     args = parser.parse_args()
     args.models_path = os.path.abspath(args.models_path)
@@ -67,44 +90,42 @@ def main():
         )
         sys.exit(1)
 
-    for model in args.models:
-        # The model is separated in various parts
-        # (ggml-model-f16.bin, ggml-model-f16.bin.0, ggml-model-f16.bin.1...)
-        f16_model_path_base = os.path.join(
-            args.models_path, model, "ggml-model-f16.bin"
-        )
-
-        if not os.path.isfile(f16_model_path_base):
-            print(f'The file %s was not found' % f16_model_path_base)
-            sys.exit(1)
-
-        f16_model_parts_paths = map(
-            lambda filename: os.path.join(f16_model_path_base, filename),
-            glob.glob(f"{f16_model_path_base}*")
-        )
-
-        for f16_model_part_path in f16_model_parts_paths:
-            if not os.path.isfile(f16_model_part_path):
-                print(
-                    f"The f16 model {os.path.basename(f16_model_part_path)} "
-                    f"was not found in {args.models_path}{os.path.sep}{model}"
-                    ". If you want to use it from another location, set the "
-                    "--models-path argument from the command line."
-                )
-                sys.exit(1)
-
-            __run_quantize_script(
-                args.quantize_script_path, f16_model_part_path
+    with create_executor(args.threads) as executor:
+        for model in args.models:
+            # The model is separated in various parts
+            # (ggml-model-f16.bin, ggml-model-f16.bin.0, ggml-model-f16.bin.1...)
+            f16_model_path_base = os.path.join(
+                args.models_path, model, "ggml-model-f16.bin"
             )
 
-            if args.remove_f16:
-                os.remove(f16_model_part_path)
+            if not os.path.isfile(f16_model_path_base):
+                print(f'The file %s was not found' % f16_model_path_base)
+                sys.exit(1)
+
+            f16_model_parts_paths = map(
+                lambda filename: os.path.join(f16_model_path_base, filename),
+                glob.glob(f"{f16_model_path_base}*"),
+            )
+
+            for f16_model_part_path in f16_model_parts_paths:
+                if not os.path.isfile(f16_model_part_path):
+                    print(
+                        f"The f16 model {os.path.basename(f16_model_part_path)} "
+                        f"was not found in {args.models_path}{os.path.sep}{model}"
+                        ". If you want to use it from another location, set the "
+                        "--models-path argument from the command line."
+                    )
+                    sys.exit(1)
+
+                executor(
+                    __run_quantize_script,
+                    args.quantize_script_path,
+                    f16_model_part_path,
+                    args.remove_f16,
+                )
 
 
-# This was extracted to a top-level function for parallelization, if
-# implemented. See https://github.com/ggerganov/llama.cpp/pull/222/commits/f8db3d6cd91bf1a1342db9d29e3092bc12dd783c#r1140496406
-
-def __run_quantize_script(script_path, f16_model_part_path):
+def __run_quantize_script(script_path, f16_model_part_path, remove_f16):
     """Run the quantize script specifying the path to it and the path to the
     f16 model to quantize.
     """
@@ -114,6 +135,8 @@ def __run_quantize_script(script_path, f16_model_part_path):
         [script_path, f16_model_part_path, new_quantized_model_path, "2"],
         check=True
     )
+    if remove_f16:
+        os.remove(f16_model_part_path)
 
 
 if __name__ == "__main__":
