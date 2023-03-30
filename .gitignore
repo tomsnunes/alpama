@@ -20,12 +20,14 @@ build-sanitize-thread/
 *.filters
 *.cmake
 *.sln
+*.tcl
 x64/
 Debug/
 Release/
 CMakeFiles/
 CMakeCache.txt
 *.dir/
+
 
 models/*
 
