@@ -1,47 +1,56 @@
 
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory)]
+    [Parameter()]
     [string]
     [ValidateSet('llama','alpaca','gpt-2','gpt4all')]
-    $model="llama",
+    $name="llama",
 
-    [Parameter(Mandatory)]
+    [Parameter()]
     [string]
     [ValidateSet('7b','13b')]
     $params="7b",
 
     [Parameter()]
     [string]
-    $profile=$model,
+    $profile=$name,
 
     [Parameter()]
     [string]
-    [ValidateSet('alpaca','chat-with-bob', 'dan', 'doctor', 'reason-act')]
+    [ValidateSet('alpaca','chat-with-bob', 'dan', 'doctor', 'reason-act', 'chat-13b')]
     $prompt,
 
     [Parameter()]
     [bool]
     $perplexity=$false
 )
+# Build definitions
+$buildVariant = "Release" # Debug | Release
+$buildTargetFolder = ".\bin"
+
+$binaryPath = "$buildTargetFolder\$buildVariant"
+
+# llama.cpp binaries
+$mainBinary = "main.exe"
+$perplexityBinary = "perplexity.exe"
 
 # Set default paths
-$modelsFolder = "C:\.ai\.models"
-$profilesFolder = Join-Path $PSScriptRoot "profiles"
-$promptsFolder = Join-Path $PSScriptRoot "prompts"
-$datasetsFolder = Join-Path $PSScriptRoot "datasets"
+$modelsFolder   =  "C:\.ai\.models"
+$profilesFolder =  "./profiles"
+$promptsFolder  =  "./prompts"
+$datasetsFolder =  "./datasets"
+
+# Perplexity
+$dataset = "wikitext-2-raw"
+$perplexityTest = "wiki.test.raw"
 
 # Loads the proper binary for the operation
 if ($perplexity) {
-    $profile = "$model-perplexity"
-    $binary = ".\bin\Release\perplexity.exe"   
-    $dataset = "wikitext-2-raw"
-    $perplexityTest = "wiki.test.raw"
-    $command = $binary
+    $profile = "perplexity_$name"
+    $command = "$binaryPath\$perplexityBinary"
     $command += " --file $datasetsFolder/$dataset/$perplexityTest"
 } else {
-    $binary = ".\bin\Release\main.exe"
-    $command = $binary
+    $command = "$binaryPath\$mainBinary"
 }
 
 # Load the configuration file as a hash table
@@ -64,19 +73,25 @@ Write-Verbose "DEBUG: Initial config: $($config | Out-String)"
 
 # Define the configuration file options
 $options = @(
+    "name",
     "model",
+    "prompt",
     "color",
     "n_predict",
     "ctx_size",
     "top_k",
+    "top_p",
     "temp",
     "repeat_penalty",
     "threads",
     "instruct",
     "interactive",
     "reverse-prompt",
-    "perplexity",
-    "prompt"
+    "batch_size",
+    "repeat_last_n",
+    "in-prefix",
+    "perplexity"
+    
 )
 
 # Build the command to run the main program with the configuration options
@@ -84,21 +99,43 @@ foreach ($option in $options) {
     if ($config.ContainsKey($option)) {
         Write-Verbose "Adding $option option with value $($config[$option])"
         
-        if ($option -eq "model") {
-            $command += " --$option $modelsFolder/$model/$params/$($config[$option])"
+        # Name
+        if ($option -eq "name") {
+            if($name -eq ""){
+                $name = "llama" # default value
+            } else {
+                $name = $($config[$option])
+            }
+        
+        # Model
+        } elseif ($option -eq "model") {
+            if(($model -eq "")-or($model -eq $null)){
+                $command += " --model $modelsFolder/$name/$params/$($config[$option])"
+            } else {
+                $command += " --model $modelsFolder/$name/$params/$model"
+            }
+
+        # Prompt
+        } elseif ($option -eq "prompt") {
+            if(($prompt -eq "")-or($prompt -eq $null)){
+                $command += " --file $promptsFolder/$($config[$option]).txt"
+            } else {
+                $command += " --file $promptsFolder/$prompt.txt"
+            }
+        
+        # Reverse Prompt
+        } elseif ($option -eq "reverse-prompt"){
+            $values = $($config[$option]) -split ","
+            foreach ($value in $values) {
+                $command += " --$option $value"
+            }
+            
         } else {
             $command += " --$option $($config[$option])"
         }
         
-        if ($option -eq "prompt" -and $prompt) {
-            $command += " --file $promptsFolder/$($config[$option]).txt"
-        }
+        
     }
-}
-
-# Append prompt file path to the command if specified on the command line
-if ($prompt -ne "") {
-    $command += " --file $promptsFolder/$prompt.txt"
 }
 
 # Run the command
