@@ -1,5 +1,4 @@
 
-# # Parse command line arguments
 param (
     [Parameter(Mandatory)][string][ValidateSet('llama','alpaca','gpt-2','gpt4all')]$model="llama",
     [Parameter(Mandatory)][string][ValidateSet('7b','13b')]$params="7b",
@@ -13,6 +12,19 @@ $modelsFolder = "C:/.ai/.models"
 $profilesFolder = "./profiles"
 $promptsFolder = "./prompts"
 $datasetsFolder = "./datasets"
+
+# Loads the proper binary for the operation
+if ($perplexity) {
+    $profile = "$model-perplexity"
+    $binary = ".\bin\Release\perplexity.exe"   
+    $dataset = "wikitext-2-raw"
+    $perplexityTest = "wiki.test.raw"
+    $command = $binary
+    $command += " --file $datasetsFolder/$dataset/$perplexityTest"
+} else {
+    $binary = ".\bin\Release\main.exe"
+    $command = $binary
+}
 
 # Load the configuration file as a hash table
 $config = @{}
@@ -43,18 +55,6 @@ $options = @(
     "perplexity",
     "prompt"
 )
-
-# Loads the proper binary for the operation
-if ($perplexity) {
-    $binary = ".\bin\Release\perplexity.exe"   
-    $dataset = "wikitext-2-raw"
-    $perplexityTest = "wiki.test.raw"
-    $command = $binary
-    $command += " --file $datasetsFolder/$dataset/$perplexityTest"
-} else {
-    $binary = ".\bin\Release\main.exe"
-    $command = $binary
-}
 
 # Build the command to run the main program with the configuration options
 foreach ($option in $options) {
