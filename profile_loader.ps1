@@ -8,7 +8,7 @@ param (
 
     [Parameter()]
     [string]
-    [ValidateSet('7b','13b','30b','65b')]
+    [ValidateSet('7b','13b','30b','65b','117m')]
     $params="7b",
 
     [Parameter()]
