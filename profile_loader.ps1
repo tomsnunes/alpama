@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    [ValidateSet('llama','alpaca','gpt-2','gpt4all')]
+    [ValidateSet('llama','alpaca','gpt-2','gpt4all','chatdoctor')]
     $name="llama",
 
     [Parameter()]
@@ -17,7 +17,7 @@ param (
 
     [Parameter()]
     [string]
-    [ValidateSet('alpaca','chat-with-bob', 'dan', 'doctor', 'reason-act', 'chat-13b')]
+    [ValidateSet('alpaca','chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b')]
     $prompt,
 
     [Parameter()]
