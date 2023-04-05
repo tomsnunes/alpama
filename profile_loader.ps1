@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    [ValidateSet('llama','alpaca','gpt-2','gpt4all','chatdoctor')]
+    [ValidateSet('llama','alpaca','gpt-2','gpt4all','chatdoctor','vicuna')]
     $name="llama",
 
     [Parameter()]
