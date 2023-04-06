@@ -3,21 +3,21 @@
 param (
     [Parameter()]
     [string]
-    [ValidateSet('llama','alpaca','gpt-2','gpt4all','chatdoctor','vicuna','point-alpaca')]
-    $name="llama",
+    [ValidateSet('llama','alpaca','alpaca-lora','gpt-2','gpt4all','chatdoctor','vicuna','point-alpaca','gpt4-x-alpaca-native')]
+    $modelName="llama",
 
     [Parameter()]
     [string]
     [ValidateSet('7b','13b','30b','65b','117m')]
-    $params="7b",
+    $modelParams="7b",
 
     [Parameter()]
     [string]
-    $profile=$name,
+    $profileName=$modelName,
 
     [Parameter()]
     [string]
-    [ValidateSet('alpaca','chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b','vicuna','point-alpaca')]
+    [ValidateSet('alpaca','chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b','vicuna')]
     $prompt,
 
     [Parameter()]
@@ -46,7 +46,7 @@ $perplexityTest = "wiki.test.raw"
 
 # Loads the proper binary for the operation
 if ($perplexity) {
-    $profile = "perplexity_$name"
+    $profileName = "perplexity_$modelName"
     $command = "$binaryPath\$perplexityBinary"
     $command += " --file $datasetsFolder/$dataset/$perplexityTest"
 } else {
@@ -56,7 +56,7 @@ if ($perplexity) {
 # Load the configuration file as a hash table
 try{
     $config = @{}
-    Get-Content (Join-Path $profilesFolder "$profile.ini") -ErrorAction Stop | ForEach-Object {
+    Get-Content (Join-Path $profilesFolder "$profileName.ini") -ErrorAction Stop | ForEach-Object {
         # Skip comments and empty lines
         if ($_ -notmatch "^\s*(#|;|$)") {
             $key, $value = $_ -split "=", 2
@@ -101,18 +101,18 @@ foreach ($option in $options) {
         
         # Name
         if ($option -eq "name") {
-            if($name -eq ""){
-                $name = "llama" # default value
+            if($modelName -eq ""){
+                $modelName = "llama" # default value
             } else {
-                $name = $($config[$option])
+                $modelName = $($config[$option])
             }
         
         # Model
         } elseif ($option -eq "model") {
-            if(($model -eq "")-or($model -eq $null)){
-                $command += " --model $modelsFolder/$name/$params/$($config[$option])"
+            if(($model -eq "")-or($null -eq $model)){
+                $command += " --model $modelsFolder/$modelName/$modelParams/$($config[$option])"
             } else {
-                $command += " --model $modelsFolder/$name/$params/$model"
+                $command += " --model $modelsFolder/$modelName/$modelParams/$model"
             }
 
         # Prompt
