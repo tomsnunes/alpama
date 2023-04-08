@@ -16,16 +16,22 @@
 #endif
 
 #if defined (_WIN32)
+#include <fcntl.h>
+#include <io.h>
 #pragma comment(lib,"kernel32.lib")
 extern "C" __declspec(dllimport) void* __stdcall GetStdHandle(unsigned long nStdHandle);
 extern "C" __declspec(dllimport) int __stdcall GetConsoleMode(void* hConsoleHandle, unsigned long* lpMode);
 extern "C" __declspec(dllimport) int __stdcall SetConsoleMode(void* hConsoleHandle, unsigned long dwMode);
 extern "C" __declspec(dllimport) int __stdcall SetConsoleCP(unsigned int wCodePageID);
 extern "C" __declspec(dllimport) int __stdcall SetConsoleOutputCP(unsigned int wCodePageID);
+extern "C" __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned int CodePage, unsigned long dwFlags, 
+                                                                   const wchar_t * lpWideCharStr, int cchWideChar, 
+                                                                   char * lpMultiByteStr, int cbMultiByte, 
+                                                                   const char * lpDefaultChar, bool * lpUsedDefaultChar);
+#define CP_UTF8 65001
 #endif
 
-bool gpt_params_parse(int argc, char **argv, gpt_params &params)
-{
+bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
     // determine sensible default number of threads.
     // std::thread::hardware_concurrency may not be equal to the number of cores, or may return 0.
 #ifdef __linux__
@@ -34,9 +40,8 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
                                   std::istream_iterator<std::string>(),
                                   std::string("processor"));
 #endif
-    if (params.n_threads == 0)
-    {
-        params.n_threads = std::max(1, (int32_t)std::thread::hardware_concurrency());
+    if (params.n_threads == 0) {
+        params.n_threads = std::max(1, (int32_t) std::thread::hardware_concurrency());
     }
 
     bool invalid_param = false;
@@ -76,8 +81,7 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
                 break;
             }
             std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.prompt));
-            if (params.prompt.back() == '\n')
-            {
+            if (params.prompt.back() == '\n') {
                 params.prompt.pop_back();
             }
         } else if (arg == "-n" || arg == "--n_predict") {
@@ -153,9 +157,7 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
             params.interactive_start = true;
         } else if (arg == "-ins" || arg == "--instruct") {
             params.instruct = true;
-        }
-        else if (arg == "--color")
-        {
+        } else if (arg == "--color") {
             params.use_color = true;
         } else if (arg == "--mlock") {
             params.use_mlock = true;
@@ -182,9 +184,7 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
         } else if (arg == "-h" || arg == "--help") {
             gpt_print_usage(argc, argv, default_params);
             exit(0);
-        }
-        else if (arg == "--random-prompt")
-        {
+        } else if (arg == "--random-prompt") {
             params.random_prompt = true;
         } else if (arg == "--in-prefix") {
             if (++i >= argc) {
@@ -207,8 +207,7 @@ bool gpt_params_parse(int argc, char **argv, gpt_params &params)
     return true;
 }
 
-void gpt_print_usage(int /*argc*/, char **argv, const gpt_params &params)
-{
+void gpt_print_usage(int /*argc*/, char ** argv, const gpt_params & params) {
     fprintf(stderr, "usage: %s [options]\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "options:\n");
@@ -251,33 +250,20 @@ void gpt_print_usage(int /*argc*/, char **argv, const gpt_params &params)
     fprintf(stderr, "\n");
 }
 
-std::string gpt_random_prompt(std::mt19937 &rng)
-{
+std::string gpt_random_prompt(std::mt19937 & rng) {
     const int r = rng() % 10;
-    switch (r)
-    {
-    case 0:
-        return "So";
-    case 1:
-        return "Once upon a time";
-    case 2:
-        return "When";
-    case 3:
-        return "The";
-    case 4:
-        return "After";
-    case 5:
-        return "If";
-    case 6:
-        return "import";
-    case 7:
-        return "He";
-    case 8:
-        return "She";
-    case 9:
-        return "They";
-    default:
-        return "To";
+    switch (r) {
+        case 0: return "So";
+        case 1: return "Once upon a time";
+        case 2: return "When";
+        case 3: return "The";
+        case 4: return "After";
+        case 5: return "If";
+        case 6: return "import";
+        case 7: return "He";
+        case 8: return "She";
+        case 9: return "They";
+        default: return "To";
     }
 
     return "The";
@@ -328,12 +314,25 @@ void win32_console_init(bool enable_color) {
             SetConsoleMode(hConOut, dwMode | 0x4); // ENABLE_VIRTUAL_TERMINAL_PROCESSING (0x4)
         }
         // Set console output codepage to UTF8
-        SetConsoleOutputCP(65001); // CP_UTF8
+        SetConsoleOutputCP(CP_UTF8);
     }
     void* hConIn = GetStdHandle((unsigned long)-10); // STD_INPUT_HANDLE (-10)
     if (hConIn && hConIn != (void*)-1 && GetConsoleMode(hConIn, &dwMode)) {
+#if 0
         // Set console input codepage to UTF8
-        SetConsoleCP(65001); // CP_UTF8
+        SetConsoleCP(CP_UTF8);
+#else
+        // Set console input codepage to UTF16
+        _setmode(_fileno(stdin), _O_WTEXT);
+#endif
     }
+}
+
+// Convert a wide Unicode string to an UTF8 string
+void win32_utf8_encode(const std::wstring & wstr, std::string & str) {
+	int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+	std::string strTo(size_needed, 0);
+	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+	str = strTo;
 }
 #endif
