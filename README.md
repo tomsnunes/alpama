@@ -226,6 +226,7 @@ Note the use of `--color` to distinguish between user input and generated text.
 ./main -m ./models/ggml-alpaca-7b-q4.bin --color -f ./prompts/alpaca.txt -ins
 ```
 
+```bash
 ./examples/alpaca.sh
 
 ```
@@ -291,7 +292,7 @@ convert the model from the old format to the new format with [./migrate-ggml-202
 ### Perplexity (Measuring model quality)
 
 You can use the `perplexity` example to measure perplexity over the given prompt.  For more background,
-see https://huggingface.co/docs/transformers/perplexity.  However, in general, lower perplexity is better for LLMs.
+see <https://huggingface.co/docs/transformers/perplexity>.  However, in general, lower perplexity is better for LLMs.
 
 #### Latest measurements
 
@@ -313,16 +314,47 @@ Perplexity - model options
 
 #### How to run
 
-1. Download/extract: https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-2-raw-v1.zip?ref=salesforce-research
+1. Download/extract: <https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-2-raw-v1.zip?ref=salesforce-research>
 2. Run `./perplexity -m models/7B/ggml-model-q4_0.bin -f wiki.test.raw`
 3. Output:
-```
+
+```text
 perplexity : calculating perplexity over 655 chunks
 24.43 seconds per pass - ETA 4.45 hours
 [1]4.5970,[2]5.1807,[3]6.0382,...
 ```
 
 And after 4.45 hours, you will have the final perplexity.
+
+### Compiling with OpenBLAS usign CMake (Windows)
+
+Here is a simple guide on how to enable compilation and configure a CMakeLists.txt file to support OpenBLAS on Windows:
+
+Step 1: Download OpenBLAS
+  Download the binary corresponding to the current OpenBLAS release for Windows from <https://github.com/xianyi/OpenBLAS/releases>.
+  Extract the compressed file and move the resulting directory to a directory of your choice, for example: C:\libs\OpenBLAS.
+
+Step 2: Add the OpenBLAS directory to the system PATH
+  Add the OpenBLAS binary directory (C:\libs\OpenBLAS\bin) to the system PATH using environment variables. This can be done in advanced system settings or using the command line.
+
+Step 3: Enable the LLAMA_OPENBLAS option in the CMakeLists.txt file
+  Open your CMake project's CMakeLists.txt file.
+  Locate the LLAMA_OPENBLAS option and set the value to ON. For example:
+
+```text
+    set(LLAMA_OPENBLAS ON)
+```
+
+Step 4: Configure the CMakeLists.txt file to use OpenBLAS
+Below the "# Build libraries" line in the CMakeLists.txt file, add the following lines as an example:
+
+```text
+  include_directories("C:/libs/OpenBLAS/include")
+  add_compile_definitions(GGML_USE_OPENBLAS)
+  add_link_options("C:/libs/OpenBLAS/lib/libopenblas.dll.a")
+```
+
+These lines tell CMake where to find the OpenBLAS include headers, define the GGML_USE_OPENBLAS compilation macro, and add the linking options for the OpenBLAS library.
 
 ### Android
 
@@ -336,12 +368,14 @@ export NDK=<your_ndk_directory>
 cmake -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.4a+dotprod ..
 make
 ```
+
 $ mkdir build-android
 $ cd build-android
 $ export NDK=<your_ndk_directory>
 $ cmake -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-23 -DCMAKE_C_FLAGS=-march=armv8.4a+dotprod ..
 $ make
-```
+
+```text
 Install [termux](https://termux.dev/) on your device and run `termux-setup-storage` to get access to your SD card.
 Finally, copy the `llama` binary and the model files to your device storage. Here is a demo of an interactive session running on Pixel 5 phone:
 
