@@ -90,7 +90,8 @@ $options = @(
     "batch_size",
     "repeat_last_n",
     "in-prefix",
-    "perplexity"
+    "perplexity",
+    "mlock"
     
 )
 
