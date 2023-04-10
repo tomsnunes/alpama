@@ -64,7 +64,7 @@ endif()
 
 # 3rd party libs
 option(LLAMA_ACCELERATE             "llama: enable Accelerate framework"                    ON)
-option(LLAMA_OPENBLAS               "llama: use OpenBLAS"                                   OFF)
+option(LLAMA_OPENBLAS               "llama: use OpenBLAS"                                   ON)
 
 option(LLAMA_BUILD_TESTS            "llama: build tests"    ${LLAMA_STANDALONE})
 option(LLAMA_BUILD_EXAMPLES         "llama: build examples" ${LLAMA_STANDALONE})
@@ -239,6 +239,10 @@ endif()
 #
 # Build libraries
 #
+
+include_directories("C:/libs/OpenBLAS/include")
+add_compile_definitions(GGML_USE_OPENBLAS)
+add_link_options("C:/libs/OpenBLAS/lib/libopenblas.dll.a")
 
 add_library(ggml OBJECT
             ggml.c
