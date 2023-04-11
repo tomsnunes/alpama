@@ -22,11 +22,11 @@ import subprocess
 import os
 
 parser = argparse.ArgumentParser(description="Description of your script")
-parser.add_argument('-modelName', type=str, default='', choices=['llama', 'alpaca', 'alpaca-lora', 'gpt-2', 'gpt4all', 'chatdoctor', 'vicuna', 'point-alpaca', 'gpt4-x-alpaca-native'], help="Model name")
-parser.add_argument('-modelParams', type=str, default='7b', choices=['7b', '13b', '30b', '65b', '117m'], help="Model parameters")
+parser.add_argument('-modelName', type=str, default='', choices=['alpaca','alpaca-lora','chatdoctor','codegen''gpt-2','gpt4-x-alpaca-native','gpt4all','llama','point-alpaca','vicuna'], help="Model name")
+parser.add_argument('-modelParams', type=str, default='7b', choices=['117m','2b','6b','7b','13b','30b','65b'], help="Model parameters")
 parser.add_argument('-profileName', type=str, default='llama', help="Profile name")
 parser.add_argument('-reversePrompt', type=str, help="Reverse prompt")
-parser.add_argument('-promptFile', type=str, choices=['alpaca', 'chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b', 'vicuna', 'cabrita'], help="Prompt")
+parser.add_argument('-promptFile', type=str, choices=['alpaca','cabrita','chat-13b','chat-with-bob','chatdoctor','codegen','dan','reason-act','vicuna'], help="Prompt")
 parser.add_argument('-perplexity', action='store_true', help="Perplexity flag")
 parser.add_argument('-loraAdapter', type=str, default='', help="Lora adapter name")
 
@@ -43,10 +43,10 @@ main_binary = "main.exe"
 perplexity_binary = "perplexity.exe"
 
 # Set default paths
-models_folder = "./models"
-loras_folder = "./loras"
+models_folder   = "./models"
+loras_folder    = "./loras"
 profiles_folder = "./profiles"
-prompts_folder = "./prompts"
+prompts_folder  = "./prompts"
 datasets_folder = "./datasets"
 
 # Perplexity

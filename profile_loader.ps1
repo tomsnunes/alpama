@@ -23,12 +23,12 @@
 param (
     [Parameter()]
     [string]
-    [ValidateSet('llama','alpaca','alpaca-lora','gpt-2','gpt4all','chatdoctor','vicuna','point-alpaca','gpt4-x-alpaca-native')]
+    [ValidateSet('alpaca','alpaca-lora','chatdoctor','codegen''gpt-2','gpt4-x-alpaca-native','gpt4all','llama','point-alpaca','vicuna')]
     $modelName="llama",
 
     [Parameter()]
     [string]
-    [ValidateSet('7b','13b','30b','65b','117m')]
+    [ValidateSet('117m','2b','6b','7b','13b','30b','65b')]
     $modelParams="7b",
 
     [Parameter()]
@@ -41,7 +41,7 @@ param (
 
     [Parameter()]
     [string]
-    [ValidateSet('alpaca','chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b','vicuna', 'cabrita')]
+    [ValidateSet('alpaca','cabrita','chat-13b','chat-with-bob','chatdoctor','codegen','dan','reason-act','vicuna')]
     $promptFile,
 
     [Parameter()]
@@ -64,7 +64,7 @@ $perplexityBinary = "perplexity.exe"
 
 # Set default paths
 $modelsFolder   =  "./models"
-$lorasFolder = "./loras"
+$lorasFolder    = "./loras"
 $profilesFolder =  "./profiles"
 $promptsFolder  =  "./prompts"
 $datasetsFolder =  "./datasets"
