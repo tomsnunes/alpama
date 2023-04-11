@@ -41,12 +41,16 @@ param (
 
     [Parameter()]
     [string]
-    [ValidateSet('alpaca','chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b','vicuna')]
+    [ValidateSet('alpaca','chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b','vicuna', 'cabrita')]
     $promptFile,
 
     [Parameter()]
     [bool]
-    $perplexity=$false
+    $perplexity=$false,
+
+    [Parameter()]
+    [string]
+    $loraAdapter
 )
 # Build definitions
 $buildVariant = "Release" # Debug | Release
@@ -60,6 +64,7 @@ $perplexityBinary = "perplexity.exe"
 
 # Set default paths
 $modelsFolder   =  "./models"
+$lorasFolder = "./loras"
 $profilesFolder =  "./profiles"
 $promptsFolder  =  "./prompts"
 $datasetsFolder =  "./datasets"
@@ -125,6 +130,7 @@ $options = @(
     "no-nmap",              # do not memory-map model (slower load but may reduce pageouts if not using mlock)
     "mtest",                # compute maximum memory usage
     "verbose-prompt",       # print prompt before generation
+    "lora",                 # apply LoRA adapter (implies --no-mmap)
     "model"                 # model path (default: models/lamma-7B/ggml-model.bin)
 )
 
@@ -161,6 +167,14 @@ foreach ($option in $options) {
                         break
                     } else {
                         $command += " --$option $modelsFolder/$profileName/$modelParams/$($config[$option])"
+                    }
+                }
+                "lora" {
+                    if ($PSBoundParameters.ContainsKey('loraAdapter')) {
+                        $command += " --$option $lorasFolder/$loraAdapter"
+                        break
+                    } else {
+                        $command += " --$option $lorasFolder/$($config[$option])"
                     }
                 }
                 "file" {

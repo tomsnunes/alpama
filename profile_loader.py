@@ -26,8 +26,10 @@ parser.add_argument('-modelName', type=str, default='', choices=['llama', 'alpac
 parser.add_argument('-modelParams', type=str, default='7b', choices=['7b', '13b', '30b', '65b', '117m'], help="Model parameters")
 parser.add_argument('-profileName', type=str, default='llama', help="Profile name")
 parser.add_argument('-reversePrompt', type=str, help="Reverse prompt")
-parser.add_argument('-promptFile', type=str, choices=['alpaca', 'chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b', 'vicuna'], help="Prompt")
+parser.add_argument('-promptFile', type=str, choices=['alpaca', 'chat-with-bob', 'dan', 'chatdoctor', 'reason-act', 'chat-13b', 'vicuna', 'cabrita'], help="Prompt")
 parser.add_argument('-perplexity', action='store_true', help="Perplexity flag")
+parser.add_argument('-loraAdapter', type=str, default='', help="Lora adapter name")
+
 args = parser.parse_args()
 
 # Build definitions
@@ -42,6 +44,7 @@ perplexity_binary = "perplexity.exe"
 
 # Set default paths
 models_folder = "./models"
+loras_folder = "./loras"
 profiles_folder = "./profiles"
 prompts_folder = "./prompts"
 datasets_folder = "./datasets"
@@ -103,6 +106,7 @@ options = [
     "no-nmap",              # do not memory-map model (slower load but may reduce pageouts if not using mlock)
     "mtest",                # compute maximum memory usage
     "verbose-prompt",       # print prompt before generation
+    "lora",                 # apply LoRA adapter (implies --no-mmap)
     "model"                 # model path (default: models/lamma-7B/ggml-model.bin)
 ]
 
@@ -132,6 +136,11 @@ for option in options:
                     command += f" --{option} {os.path.join(models_folder,args.profileName,args.modelParams,args.modelName)}.bin"
                 else:
                     command += f" --{option} {os.path.join(models_folder,args.profileName,args.modelParams,config[option])}"
+            elif option == "lora":
+                if (args.loraAdapter):
+                    command += f" --{option} {os.path.join(loras_folder, args.loraAdapter)}"
+                else:
+                    command += f" --{option} {os.path.join(loras_folder,config[option])}"
             elif option == "file":
                 if (args.promptFile):
                     command += f" --file {os.path.join(prompts_folder, args.promptFile)}.txt"
