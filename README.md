@@ -1,4 +1,11 @@
-# llama.cpp
+# alpama.cpp
+
+A no drama Llama 🦙
+
+This fork is for experimental testing only and is heavily based on a native Windows environment.
+I've changed a few things to stay on edge and generally things happen quickly here to really whip llama.cpp's ass!
+
+All the hard work is happening in llama.cpp thanks to ggerganov. He is the guy.
 
 ![llama](https://user-images.githubusercontent.com/1991296/230134379-7181e485-c521-4d23-a0d6-f7b3b61ba524.png)
 
@@ -21,6 +28,7 @@ The main goal is to run the model using 4-bit quantization on a MacBook
 - Mixed F16 / F32 precision
 - 4-bit quantization support
 - Runs on the CPU
+- Adds cool wrappers through Python and PowerShell scripts to load configuration profiles simplifying your experiments
 
 This was [hacked in an evening](https://github.com/ggerganov/llama.cpp/issues/33#issuecomment-1465108022) - I have no idea if it works correctly.
 Please do not make conclusions about the models based on the results from this implementation.
