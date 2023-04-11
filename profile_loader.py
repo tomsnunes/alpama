@@ -1,3 +1,22 @@
+#
+# This Python script is designed to provide a user-friendly interface for loading configuration profiles to be used with the llama.cpp binary. The script uses the argparse library to parse command line arguments and provides a help description for each argument.
+# The available command line arguments are:
+#   -modelName: The name of the model to use, with options including llama, alpaca, alpaca-lora, gpt-2, gpt4all, chatdoctor, vicuna, point-alpaca, and gpt4-x-alpaca-native.
+#   -modelParams: The parameters of the model to use, with options including 7b, 13b, 30b, 65b, and 117m.
+#   -profileName: The name of the profile to load.
+#   -reversePrompt: The reverse prompt to use.
+#   -promptFile: The prompt file to use, with options including alpaca, chat-with-bob, dan, chatdoctor, reason-act, chat-13b, and vicuna.
+#   -perplexity: A flag to indicate whether to compute perplexity over the prompt.
+#
+# The script also defines default paths for various folders, such as models, profiles, prompts, and datasets. It then constructs the command to run the main program based on the specified options and loads the configuration file as a dictionary. The script also defines a list of available configuration file options, which can be used to customize the behavior of the llama.cpp binary.
+# The benefits of this approach include:
+#   User-friendly interface: The script provides a clear and descriptive help message for each command line argument, making it easy for users to understand how to use the script and specify the desired configuration options.
+#   Flexibility: By using command line arguments, users can easily customize the behavior of the llama.cpp binary by specifying different values for model name, model parameters, profile name, reverse prompt, prompt file, and other options. This allows for greater flexibility and adaptability of the script to different use cases.
+#   Error handling: The script includes error handling to catch and handle exceptions that may occur while reading the configuration file. This helps to provide informative error messages to users in case of any issues, making it easier to diagnose and fix problems.
+#   Reusability: The script can be easily reused in different projects or scenarios where the llama.cpp binary is used with different configuration profiles. This makes it a handy tool for loading configuration profiles in a user-friendly way, without having to manually specify all the options every time.
+#   Maintainability: The script uses a modular and organized approach, separating the command line argument parsing, configuration file reading, and command building into different sections. This makes the script easier to understand, update, and maintain in the future.
+#   Debug: The script provides verbose output for debugging purposes, allowing users to easily identify and fix any issues that may arise during the execution of the script. This helps to streamline the troubleshooting process and ensures that users can quickly resolve any problems.
+
 import argparse
 import subprocess
 import os
@@ -110,14 +129,14 @@ for option in options:
         else:
             if option == "model":
                 if (args.modelName):
-                    command += f" --{option} {os.path.join(models_folder,args.profileName,args.modelParams,args.modelName)}"
+                    command += f" --{option} {os.path.join(models_folder,args.profileName,args.modelParams,args.modelName)}.bin"
                 else:
                     command += f" --{option} {os.path.join(models_folder,args.profileName,args.modelParams,config[option])}"
             elif option == "file":
                 if (args.promptFile):
                     command += f" --file {os.path.join(prompts_folder, args.promptFile)}.txt"
                 else:
-                    command += f" --file {os.path.join(prompts_folder, config[option])}.txt"
+                    command += f" --file {os.path.join(prompts_folder, config[option])}"
             elif option == "reverse-prompt":
                 if (args.reversePrompt):
                     values = config[option].split(",")

@@ -1,3 +1,23 @@
+# This PowerShell script is designed to provide a user-friendly interface for loading configuration profiles without using Python on Windows environments. It acts as a wrapper to load the possible parameters of the llama.cpp binary, which is a language model for generating text.
+# The script takes several parameters that allow the user to customize the behavior of the llama.cpp binary. The parameters include:
+#     $modelName: A string parameter that specifies the name of the model to load. It has a default value of "llama" and accepts a predefined set of values for different models, such as "alpaca", "gpt-2", "vicuna", etc.
+#     $modelParams: A string parameter that specifies the parameters of the model to load. It has a default value of "7b" and accepts a predefined set of values for different parameter configurations, such as "7b", "30b", etc.
+#     $profileName: A string parameter that specifies the name of the configuration profile to load. It has a default value of the $modelName parameter, but can be overridden with a custom value.
+#     $reversePrompt: A string parameter that specifies a reverse prompt to use during text generation. It can be used multiple times to specify multiple reverse prompts.
+#     $promptFile: A string parameter that specifies a file containing prompts to use during text generation. It accepts a predefined set of values for different prompt files, such as "alpaca", "chat-with-bob", etc.
+#     $perplexity: A boolean parameter that indicates whether to compute perplexity over the prompts. It has a default value of false.
+#
+# The script also defines default paths for various files and folders related to the llama.cpp binary, such as the binary path, models folder, profiles folder, prompts folder, and datasets folder. It then attempts to read the configuration file specified by the $profileName parameter as a hash table, storing the key-value pairs in a $config variable.
+# The script also defines a set of configuration options for the llama.cpp binary as an array of strings. These options include various parameters for controlling the behavior of the text generation process, such as temperature, top-k sampling, batch size, and more.
+# Finally, the script builds the command to run the llama.cpp binary with the specified configuration options based on the values of the parameters and the loaded configuration file. The command is then executed, allowing the user to generate text using the llama.cpp binary with the desired configuration. The script also includes error handling for reading the configuration file and provides verbose output for debugging purposes.
+# The benefits of using this PowerShell script as a wrapper for loading configuration profiles for the llama.cpp binary without using Python on Windows environments include:
+
+#   User-friendly interface: The script provides a clear and descriptive help message for each command line argument, making it easy for users to understand how to use the script and specify the desired configuration options.
+#   Flexibility: By using command line arguments, users can easily customize the behavior of the llama.cpp binary by specifying different values for model name, model parameters, profile name, reverse prompt, prompt file, and other options. This allows for greater flexibility and adaptability of the script to different use cases.
+#   Error handling: The script includes error handling to catch and handle exceptions that may occur while reading the configuration file. This helps to provide informative error messages to users in case of any issues, making it easier to diagnose and fix problems.
+#   Reusability: The script can be easily reused in different projects or scenarios where the llama.cpp binary is used with different configuration profiles. This makes it a handy tool for loading configuration profiles in a user-friendly way, without having to manually specify all the options every time.
+#   Maintainability: The script uses a modular and organized approach, separating the command line argument parsing, configuration file reading, and command building into different sections. This makes the script easier to understand, update, and maintain in the future.
+#   Debug: The script provides verbose output for debugging purposes, allowing users to easily identify and fix any issues that may arise during the execution of the script. This helps to streamline the troubleshooting process and ensures that users can quickly resolve any problems.
 
 [CmdletBinding()]
 param (
@@ -137,7 +157,7 @@ foreach ($option in $options) {
             switch ($option) {
                 "model" {
                     if ($PSBoundParameters.ContainsKey('modelName')) {
-                        $command += " --$option $modelsFolder/$profileName/$modelParams/$modelName"
+                        $command += " --$option $modelsFolder/$profileName/$modelParams/$modelName.bin"
                         break
                     } else {
                         $command += " --$option $modelsFolder/$profileName/$modelParams/$($config[$option])"
@@ -148,7 +168,7 @@ foreach ($option in $options) {
                         $command += " --file $promptsFolder/$promptFile.txt"
                         break
                     } else {
-                        $command += " --file $promptsFolder/$($config[$option]).txt"
+                        $command += " --file $promptsFolder/$($config[$option])"
                     }
                 }
                 "reverse-prompt" {
