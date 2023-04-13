@@ -56,6 +56,10 @@ option(LLAMA_AVX                    "llama: enable AVX"                         
 option(LLAMA_AVX2                   "llama: enable AVX2"                                    ON)
 option(LLAMA_AVX512                 "llama: enable AVX512"                                  OFF)
 option(LLAMA_FMA                    "llama: enable FMA"                                     ON)
+# in MSVC F16C is implied with AVX2/AVX512
+if (NOT MSVC)
+    option(LLAMA_F16C               "llama: enable F16C"                                    ON)
+endif()
 
 # in MSVC F16C is implied with AVX2/AVX512
 if (NOT MSVC)
