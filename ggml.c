@@ -6664,7 +6664,7 @@ static void ggml_compute_forward_mul_mat_f32(
                 cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                         ne11, ne01, ne10,
                         1.0f,    y, ne10,
-                                 x, ne10,
+                                 x, ne00,
                         0.0f,    d, ne01);
             }
         }
@@ -6836,7 +6836,7 @@ static void ggml_compute_forward_mul_mat_f16_f32(
                 cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                         ne11, ne01, ne10,
                         1.0f,    y, ne10,
-                                 x, ne10,
+                                 x, ne00,
                         0.0f,    d, ne01);
             }
         }
@@ -7028,7 +7028,7 @@ static void ggml_compute_forward_mul_mat_q_f32(
                 cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                         ne11, ne01, ne10,
                         1.0f,    y, ne10,
-                                 x, ne10,
+                                 x, ne00,
                         0.0f,    d, ne01);
             }
         }
