@@ -240,9 +240,9 @@ endif()
 # Build libraries
 #
 
-# include_directories("C:/libs/OpenBLAS/include")
-# add_compile_definitions(GGML_USE_OPENBLAS)
-# add_link_options("C:/libs/OpenBLAS/lib/libopenblas.dll.a")
+include_directories("C:/libs/OpenBLAS/include")
+add_compile_definitions(GGML_USE_OPENBLAS)
+add_link_options("C:/libs/OpenBLAS/lib/libopenblas.dll.a")
 
 add_library(ggml OBJECT
             ggml.c
