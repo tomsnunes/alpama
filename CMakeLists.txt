@@ -55,6 +55,8 @@ option(LLAMA_SANITIZE_UNDEFINED     "llama: enable undefined sanitizer"         
 option(LLAMA_AVX                    "llama: enable AVX"                                     ON)
 option(LLAMA_AVX2                   "llama: enable AVX2"                                    ON)
 option(LLAMA_AVX512                 "llama: enable AVX512"                                  OFF)
+option(LLAMA_AVX512_VBMI            "llama: enable AVX512-VBMI"                             OFF)
+option(LLAMA_AVX512_VNNI            "llama: enable AVX512-VNNI"                             OFF)
 option(LLAMA_FMA                    "llama: enable FMA"                                     ON)
 # in MSVC F16C is implied with AVX2/AVX512
 if (NOT MSVC)
@@ -68,7 +70,7 @@ endif()
 
 # 3rd party libs
 option(LLAMA_ACCELERATE             "llama: enable Accelerate framework"                    ON)
-option(LLAMA_OPENBLAS               "llama: use OpenBLAS"                                   OFF)
+option(LLAMA_OPENBLAS               "llama: use OpenBLAS"                                   ON)
 
 option(LLAMA_BUILD_TESTS            "llama: build tests"    ${LLAMA_STANDALONE})
 option(LLAMA_BUILD_EXAMPLES         "llama: build examples" ${LLAMA_STANDALONE})
@@ -125,6 +127,21 @@ if (LLAMA_OPENBLAS)
         add_compile_definitions(GGML_USE_OPENBLAS)
         add_link_options(${BLAS_LIBRARIES})
         set(LLAMA_EXTRA_LIBS ${LLAMA_EXTRA_LIBS} openblas)
+
+        # find header file
+        set(OPENBLAS_INCLUDE_SEARCH_PATHS
+            /usr/include
+            /usr/include/openblas
+            /usr/include/openblas-base
+            /usr/local/include
+            /usr/local/include/openblas
+            /usr/local/include/openblas-base
+            /opt/OpenBLAS/include
+            $ENV{OpenBLAS_HOME}
+            $ENV{OpenBLAS_HOME}/include
+            )
+        find_path(OPENBLAS_INC NAMES cblas.h PATHS ${OPENBLAS_INCLUDE_SEARCH_PATHS})
+        add_compile_options(-I${OPENBLAS_INC})
     else()
         message(WARNING "OpenBLAS not found")
     endif()
@@ -210,6 +227,16 @@ elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(x86_64|i686|AMD64)$")
     if (MSVC)
         if (LLAMA_AVX512)
             add_compile_options(/arch:AVX512)
+            # MSVC has no compile-time flags enabling specific
+            # AVX512 extensions, neither it defines the
+            # macros corresponding to the extensions.
+            # Do it manually.
+            if (LLAMA_AVX512_VBMI)
+                add_compile_definitions(__AVX512VBMI__)
+            endif()
+            if (LLAMA_AVX512_VNNI)
+                add_compile_definitions(__AVX512VNNI__)
+            endif()
         elseif (LLAMA_AVX2)
             add_compile_options(/arch:AVX2)
         elseif (LLAMA_AVX)
@@ -230,9 +257,13 @@ elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(x86_64|i686|AMD64)$")
         endif()
         if (LLAMA_AVX512)
             add_compile_options(-mavx512f)
-            # add_compile_options(-mavx512cd)
-            # add_compile_options(-mavx512dq)
-            # add_compile_options(-mavx512bw)
+            add_compile_options(-mavx512bw)
+        endif()
+        if (LLAMA_AVX512_VBMI)
+            add_compile_options(-mavx512vbmi)
+        endif()
+        if (LLAMA_AVX512_VNNI)
+            add_compile_options(-mavx512vnni)
         endif()
     endif()
 else()
@@ -244,9 +275,9 @@ endif()
 # Build libraries
 #
 
-include_directories("C:/libs/OpenBLAS/include")
+include_directories($ENV{OpenBLAS_HOME}/include)
 add_compile_definitions(GGML_USE_OPENBLAS)
-add_link_options("C:/libs/OpenBLAS/lib/libopenblas.dll.a")
+add_link_options($ENV{OpenBLAS_HOME}/lib/libopenblas.dll.a)
 
 add_library(ggml OBJECT
             ggml.c

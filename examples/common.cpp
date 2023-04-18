@@ -7,23 +7,24 @@
 #include <iterator>
 #include <algorithm>
 
-#if defined (_WIN32)
+#if defined(_WIN32)
 #include <fcntl.h>
 #include <io.h>
-#pragma comment(lib,"kernel32.lib")
-extern "C" __declspec(dllimport) void* __stdcall GetStdHandle(unsigned long nStdHandle);
-extern "C" __declspec(dllimport) int __stdcall GetConsoleMode(void* hConsoleHandle, unsigned long* lpMode);
-extern "C" __declspec(dllimport) int __stdcall SetConsoleMode(void* hConsoleHandle, unsigned long dwMode);
+#pragma comment(lib, "kernel32.lib")
+extern "C" __declspec(dllimport) void *__stdcall GetStdHandle(unsigned long nStdHandle);
+extern "C" __declspec(dllimport) int __stdcall GetConsoleMode(void *hConsoleHandle, unsigned long *lpMode);
+extern "C" __declspec(dllimport) int __stdcall SetConsoleMode(void *hConsoleHandle, unsigned long dwMode);
 extern "C" __declspec(dllimport) int __stdcall SetConsoleCP(unsigned int wCodePageID);
 extern "C" __declspec(dllimport) int __stdcall SetConsoleOutputCP(unsigned int wCodePageID);
 extern "C" __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned int CodePage, unsigned long dwFlags,
-                                                                   const wchar_t * lpWideCharStr, int cchWideChar,
-                                                                   char * lpMultiByteStr, int cbMultiByte,
-                                                                   const char * lpDefaultChar, bool * lpUsedDefaultChar);
+                                                                   const wchar_t *lpWideCharStr, int cchWideChar,
+                                                                   char *lpMultiByteStr, int cbMultiByte,
+                                                                   const char *lpDefaultChar, bool *lpUsedDefaultChar);
 #define CP_UTF8 65001
 #endif
 
-bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
+bool gpt_params_parse(int argc, char **argv, gpt_params &params)
+{
     // determine sensible default number of threads.
     // std::thread::hardware_concurrency may not be equal to the number of cores, or may return 0.
 #ifdef __linux__
@@ -32,174 +33,273 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
                                   std::istream_iterator<std::string>(),
                                   std::string("processor"));
 #endif
-    if (params.n_threads == 0) {
-        params.n_threads = std::max(1, (int32_t) std::thread::hardware_concurrency());
+    if (params.n_threads == 0)
+    {
+        params.n_threads = std::max(1, (int32_t)std::thread::hardware_concurrency());
     }
 
     bool invalid_param = false;
     std::string arg;
     gpt_params default_params;
 
-    for (int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++)
+    {
         arg = argv[i];
 
-        if (arg == "-s" || arg == "--seed") {
-            if (++i >= argc) {
+        if (arg == "-s" || arg == "--seed")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.seed = std::stoi(argv[i]);
-        } else if (arg == "-t" || arg == "--threads") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-t" || arg == "--threads")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.n_threads = std::stoi(argv[i]);
-        } else if (arg == "-p" || arg == "--prompt") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-p" || arg == "--prompt")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.prompt = argv[i];
-        } else if (arg == "-f" || arg == "--file") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-f" || arg == "--file")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             std::ifstream file(argv[i]);
-            if (!file) {
+            if (!file)
+            {
                 fprintf(stderr, "error: failed to open file '%s'\n", argv[i]);
                 invalid_param = true;
                 break;
             }
             std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.prompt));
-            if (params.prompt.back() == '\n') {
+            if (params.prompt.back() == '\n')
+            {
                 params.prompt.pop_back();
             }
-        } else if (arg == "-n" || arg == "--n_predict") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-n" || arg == "--n_predict")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.n_predict = std::stoi(argv[i]);
-        } else if (arg == "--top_k") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--top_k")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.top_k = std::stoi(argv[i]);
-        } else if (arg == "-c" || arg == "--ctx_size") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-c" || arg == "--ctx_size")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.n_ctx = std::stoi(argv[i]);
-        } else if (arg == "--memory_f32") {
+        }
+        else if (arg == "--memory_f32")
+        {
             params.memory_f16 = false;
-        } else if (arg == "--top_p") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--top_p")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.top_p = std::stof(argv[i]);
-        } else if (arg == "--temp") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--temp")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.temp = std::stof(argv[i]);
-        } else if (arg == "--repeat_last_n") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--repeat_last_n")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.repeat_last_n = std::stoi(argv[i]);
-        } else if (arg == "--repeat_penalty") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--repeat_penalty")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.repeat_penalty = std::stof(argv[i]);
-        } else if (arg == "-b" || arg == "--batch_size") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-b" || arg == "--batch_size")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.n_batch = std::stoi(argv[i]);
             params.n_batch = std::min(512, params.n_batch);
-        } else if (arg == "--keep") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--keep")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.n_keep = std::stoi(argv[i]);
-        } else if (arg == "-m" || arg == "--model") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-m" || arg == "--model")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.model = argv[i];
-        } else if (arg == "--lora") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--lora")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.lora_adapter = argv[i];
             params.use_mmap = false;
-        } else if (arg == "-i" || arg == "--interactive") {
+        }
+        else if (arg == "--lora-base")
+        {
+            if (++i >= argc)
+            {
+                invalid_param = true;
+                break;
+            }
+            params.lora_base = argv[i];
+        }
+        else if (arg == "-i" || arg == "--interactive")
+        {
             params.interactive = true;
-        } else if (arg == "--embedding") {
+        }
+        else if (arg == "--embedding")
+        {
             params.embedding = true;
-        } else if (arg == "--interactive-start") {
+        }
+        else if (arg == "--interactive-start")
+        {
             params.interactive = true;
-        } else if (arg == "--interactive-first") {
+        }
+        else if (arg == "--interactive-first")
+        {
             params.interactive_start = true;
-        } else if (arg == "-ins" || arg == "--instruct") {
+        }
+        else if (arg == "-ins" || arg == "--instruct")
+        {
             params.instruct = true;
-        } else if (arg == "--color") {
+        }
+        else if (arg == "--color")
+        {
             params.use_color = true;
-        } else if (arg == "--mlock") {
+        }
+        else if (arg == "--mlock")
+        {
             params.use_mlock = true;
-        } else if (arg == "--no-mmap") {
+        }
+        else if (arg == "--no-mmap")
+        {
             params.use_mmap = false;
-        } else if (arg == "--mtest") {
+        }
+        else if (arg == "--mtest")
+        {
             params.mem_test = true;
-        } else if (arg == "--verbose-prompt") {
+        }
+        else if (arg == "--verbose-prompt")
+        {
             params.verbose_prompt = true;
-        } else if (arg == "-r" || arg == "--reverse-prompt") {
-            if (++i >= argc) {
+        }
+        else if (arg == "-r" || arg == "--reverse-prompt")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.antiprompt.push_back(argv[i]);
-        } else if (arg == "--perplexity") {
+        }
+        else if (arg == "--perplexity")
+        {
             params.perplexity = true;
-        } else if (arg == "--ignore-eos") {
+        }
+        else if (arg == "--ignore-eos")
+        {
             params.ignore_eos = true;
-        } else if (arg == "--n_parts") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--n_parts")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.n_parts = std::stoi(argv[i]);
-        } else if (arg == "-h" || arg == "--help") {
+        }
+        else if (arg == "-h" || arg == "--help")
+        {
             gpt_print_usage(argc, argv, default_params);
             exit(0);
-        } else if (arg == "--random-prompt") {
+        }
+        else if (arg == "--random-prompt")
+        {
             params.random_prompt = true;
-        } else if (arg == "--in-prefix") {
-            if (++i >= argc) {
+        }
+        else if (arg == "--in-prefix")
+        {
+            if (++i >= argc)
+            {
                 invalid_param = true;
                 break;
             }
             params.input_prefix = argv[i];
-        } else {
+        }
+        else
+        {
             fprintf(stderr, "error: unknown argument: %s\n", arg.c_str());
             gpt_print_usage(argc, argv, default_params);
             exit(1);
         }
     }
-    if (invalid_param) {
+    if (invalid_param)
+    {
         fprintf(stderr, "error: invalid parameter for argument: %s\n", arg.c_str());
         gpt_print_usage(argc, argv, default_params);
         exit(1);
@@ -208,7 +308,8 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
     return true;
 }
 
-void gpt_print_usage(int /*argc*/, char ** argv, const gpt_params & params) {
+void gpt_print_usage(int /*argc*/, char **argv, const gpt_params &params)
+{
     fprintf(stderr, "usage: %s [options]\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "options:\n");
@@ -241,41 +342,58 @@ void gpt_print_usage(int /*argc*/, char ** argv, const gpt_params & params) {
     fprintf(stderr, "  -b N, --batch_size N  batch size for prompt processing (default: %d)\n", params.n_batch);
     fprintf(stderr, "  --perplexity          compute perplexity over the prompt\n");
     fprintf(stderr, "  --keep                number of tokens to keep from the initial prompt (default: %d, -1 = all)\n", params.n_keep);
-    if (llama_mlock_supported()) {
+    if (llama_mlock_supported())
+    {
         fprintf(stderr, "  --mlock               force system to keep model in RAM rather than swapping or compressing\n");
     }
-    if (llama_mmap_supported()) {
+    if (llama_mmap_supported())
+    {
         fprintf(stderr, "  --no-mmap             do not memory-map model (slower load but may reduce pageouts if not using mlock)\n");
     }
     fprintf(stderr, "  --mtest               compute maximum memory usage\n");
     fprintf(stderr, "  --verbose-prompt      print prompt before generation\n");
     fprintf(stderr, "  --lora FNAME          apply LoRA adapter (implies --no-mmap)\n");
+    fprintf(stderr, "  --lora-base FNAME     optional model to use as a base for the layers modified by the LoRA adapter\n");
     fprintf(stderr, "  -m FNAME, --model FNAME\n");
     fprintf(stderr, "                        model path (default: %s)\n", params.model.c_str());
     fprintf(stderr, "\n");
 }
 
-std::string gpt_random_prompt(std::mt19937 & rng) {
+std::string gpt_random_prompt(std::mt19937 &rng)
+{
     const int r = rng() % 10;
-    switch (r) {
-        case 0: return "So";
-        case 1: return "Once upon a time";
-        case 2: return "When";
-        case 3: return "The";
-        case 4: return "After";
-        case 5: return "If";
-        case 6: return "import";
-        case 7: return "He";
-        case 8: return "She";
-        case 9: return "They";
-        default: return "To";
+    switch (r)
+    {
+    case 0:
+        return "So";
+    case 1:
+        return "Once upon a time";
+    case 2:
+        return "When";
+    case 3:
+        return "The";
+    case 4:
+        return "After";
+    case 5:
+        return "If";
+    case 6:
+        return "import";
+    case 7:
+        return "He";
+    case 8:
+        return "She";
+    case 9:
+        return "They";
+    default:
+        return "To";
     }
 
     return "The";
 }
 
 // TODO: not great allocating this every time
-std::vector<llama_token> llama_tokenize(struct llama_context * ctx, const std::string & text, bool add_bos) {
+std::vector<llama_token> llama_tokenize(struct llama_context *ctx, const std::string &text, bool add_bos)
+{
     // initialize to prompt numer of chars, since n_tokens <= n_prompt_chars
     std::vector<llama_token> res(text.size() + (int)add_bos);
     int n = llama_tokenize(ctx, text.c_str(), res.data(), res.size(), add_bos);
@@ -286,50 +404,60 @@ std::vector<llama_token> llama_tokenize(struct llama_context * ctx, const std::s
 }
 
 /* Keep track of current color of output, and emit ANSI code if it changes. */
-void set_console_color(console_state & con_st, console_color_t color) {
-    if (con_st.use_color && con_st.color != color) {
-        switch(color) {
-            case CONSOLE_COLOR_DEFAULT:
-                printf(ANSI_COLOR_RESET);
-                break;
-            case CONSOLE_COLOR_PROMPT:
-                printf(ANSI_COLOR_YELLOW);
-                break;
-            case CONSOLE_COLOR_USER_INPUT:
-                printf(ANSI_BOLD ANSI_COLOR_GREEN);
-                break;
+void set_console_color(console_state &con_st, console_color_t color)
+{
+    if (con_st.use_color && con_st.color != color)
+    {
+        switch (color)
+        {
+        case CONSOLE_COLOR_DEFAULT:
+            printf(ANSI_COLOR_RESET);
+            break;
+        case CONSOLE_COLOR_PROMPT:
+            printf(ANSI_COLOR_YELLOW);
+            break;
+        case CONSOLE_COLOR_USER_INPUT:
+            printf(ANSI_BOLD ANSI_COLOR_GREEN);
+            break;
         }
         con_st.color = color;
     }
 }
 
-#if defined (_WIN32)
-void win32_console_init(bool enable_color) {
+#if defined(_WIN32)
+void win32_console_init(bool enable_color)
+{
     unsigned long dwMode = 0;
-    void* hConOut = GetStdHandle((unsigned long)-11); // STD_OUTPUT_HANDLE (-11)
-    if (!hConOut || hConOut == (void*)-1 || !GetConsoleMode(hConOut, &dwMode)) {
+    void *hConOut = GetStdHandle((unsigned long)-11); // STD_OUTPUT_HANDLE (-11)
+    if (!hConOut || hConOut == (void *)-1 || !GetConsoleMode(hConOut, &dwMode))
+    {
         hConOut = GetStdHandle((unsigned long)-12); // STD_ERROR_HANDLE (-12)
-        if (hConOut && (hConOut == (void*)-1 || !GetConsoleMode(hConOut, &dwMode))) {
+        if (hConOut && (hConOut == (void *)-1 || !GetConsoleMode(hConOut, &dwMode)))
+        {
             hConOut = 0;
         }
     }
-    if (hConOut) {
+    if (hConOut)
+    {
         // Enable ANSI colors on Windows 10+
-        if (enable_color && !(dwMode & 0x4)) {
+        if (enable_color && !(dwMode & 0x4))
+        {
             SetConsoleMode(hConOut, dwMode | 0x4); // ENABLE_VIRTUAL_TERMINAL_PROCESSING (0x4)
         }
         // Set console output codepage to UTF8
         SetConsoleOutputCP(CP_UTF8);
     }
-    void* hConIn = GetStdHandle((unsigned long)-10); // STD_INPUT_HANDLE (-10)
-    if (hConIn && hConIn != (void*)-1 && GetConsoleMode(hConIn, &dwMode)) {
+    void *hConIn = GetStdHandle((unsigned long)-10); // STD_INPUT_HANDLE (-10)
+    if (hConIn && hConIn != (void *)-1 && GetConsoleMode(hConIn, &dwMode))
+    {
         // Set console input codepage to UTF16
         _setmode(_fileno(stdin), _O_WTEXT);
     }
 }
 
 // Convert a wide Unicode string to an UTF8 string
-void win32_utf8_encode(const std::wstring & wstr, std::string & str) {
+void win32_utf8_encode(const std::wstring &wstr, std::string &str)
+{
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
     std::string strTo(size_needed, 0);
     WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
